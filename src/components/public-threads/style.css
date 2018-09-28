@@ -1,0 +1,31 @@
+.public_threads {
+	padding: 20px;
+  background: #EEE;
+  border-radius: 4px;
+}
+
+.threads_list {
+  list-style: none;
+  margin: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  overflow-y: scroll;
+  max-height: 300px;
+}
+
+.threads_list .threads_list_item {
+  background: white;
+  margin: 0 0 1px 0;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+}
+
+.threads_list .threads_list_right {
+  justify-self: end;
+}
+
+.threads_list .threads_list_right a {
+  margin: 0 5px;
+}

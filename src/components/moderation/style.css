@@ -1,3 +1,45 @@
 .moderation {
-	
+  padding: 20px;
+  background: #EEE;
+  border-radius: 4px;
+}
+
+.flagged_list {
+  list-style: none;
+  margin: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  overflow-y: scroll;
+  max-height: 300px;
+}
+
+.flagged_list .flagged_list_item {
+  background: white;
+  margin: 0 0 1px 0;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 40px 1fr 100px;
+  align-items: center;
+}
+
+.flagged_list .user_avatar {
+  width: 32px;
+  height: 32px;
+  margin-right: 5px;
+  border: 1px solid #EEE;
+  box-sizing: border-box;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.flagged_list .message {
+  justify-self: stretch;
+}
+
+.flagged_list .flagged_list_right {
+  justify-self: end;
+}
+
+.flagged_list .flagged_list_right a {
+  margin: 0 5px;
 }

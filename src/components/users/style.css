@@ -3,3 +3,47 @@
   background: #EEE;
   border-radius: 4px;
 }
+
+.users_list {
+  list-style: none;
+  margin: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  overflow-y: scroll;
+  max-height: 300px;
+}
+
+.users_list .users_list_item {
+  background: white;
+  margin: 0 0 1px 0;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 160px;
+  align-items: center;
+}
+
+.users_list .user_avatar {
+  width: 32px;
+  height: 32px;
+  margin-right: 5px;
+  border: 1px solid #EEE;
+  box-sizing: border-box;
+  border-radius: 16px;
+  object-fit: cover;
+}
+
+.users_list .users_list_right {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+}
+
+.users_list .users_list_right a {
+  margin: 0 5px;
+}
+
+.users_list .country_flag {
+  width: 32px;
+  height: 32px;
+  margin-left: 5px;
+}
