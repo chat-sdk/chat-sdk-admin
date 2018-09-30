@@ -132,7 +132,7 @@ app.get('/:root/threads/:tid/users/:uid', (req, res) => {
 })
 
 app.post('/:root/threads/:tid/meta', (req, res) => {
-  api.updateThreadMeta(req.params.root, req.params.tid, req.body)
+  api.setThreadMeta(req.params.root, req.params.tid, req.body)
     .then(() => res.sendStatus(200))
     .catch(() => res.sendStatus(500))
 })
@@ -212,7 +212,7 @@ app.get('/:root/users/:uid/threads', (req, res) => {
 })
 
 app.post('/:root/users/:uid/meta', (req, res) => {
-  api.updateUserMeta(req.params.root, req.params.uid, req.body)
+  api.setUserMeta(req.params.root, req.params.uid, req.body)
     .then(() => res.sendStatus(200))
     .catch(() => res.sendStatus(500))
 })

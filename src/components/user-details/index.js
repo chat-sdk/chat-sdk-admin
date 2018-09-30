@@ -1,67 +1,87 @@
-import { route } from 'preact-router'
-import { Link } from 'preact-router/match'
+import { Component } from 'preact'
 
 import style from './style'
 
-const userMeta = {}
+import CustomFields from '../custom-fields'
 
-const handleInputChange = ev => {
-	userMeta[ev.target.id] = ev.target.value
+export default class UserDetails extends Component {
+	constructor(props) {
+		super(props)
+		this.state = {
+			meta: props.user.meta,
+			ignoreInCustomFields: ['name', 'name-lowercase', 'status', 'email', 'phone', 'location', 'country-code', 'pictureURL', 'pushToken']
+		}
+	}
+
+	handleMetaInput(ev) {
+		const meta = this.state.meta
+		meta[ev.target.id] = ev.target.value
+		if (ev.target.id === 'name') {
+			meta['name-lowercase'] = ev.target.value.toLowerCase()
+		}
+		this.setState({ meta })
+	}
+
+	customMetaUpdated(meta) {
+		this.setState({ meta })
+	}
+
+	renderMeta() {
+		return (
+			<div>
+				<div class="row">
+					<div class="columns six">
+						<label for="name">Name</label>
+						<input class="u-full-width" type="text" id="name" value={this.state.meta.name} onInput={this.handleMetaInput.bind(this)} />
+					</div>
+					<div class="columns six">
+						<label for="status">Status</label>
+						<input class="u-full-width" type="text" id="status" value={this.state.meta.status} onChange={this.handleMetaInput.bind(this)} />
+					</div>
+				</div>
+				<div class="row">
+					<div class="columns six">
+						<label for="email">Email</label>
+						<input class="u-full-width" type="text" id="email" value={this.state.meta.email} onChange={this.handleMetaInput.bind(this)} />
+					</div>
+					<div class="columns six">
+						<label for="phone">Phone</label>
+						<input class="u-full-width" type="text" id="phone" value={this.state.meta.phone} onChange={this.handleMetaInput.bind(this)} />
+					</div>
+				</div>
+				<div class="row">
+					<div class="columns six">
+						<label for="location">Location</label>
+						<input class="u-full-width" type="text" id="location" value={this.state.meta.location} onChange={this.handleMetaInput.bind(this)} />
+					</div>
+					<div class="columns six">
+						<label for="country-code">Country Code</label>
+						<input class="u-full-width" type="text" id="country-code" value={this.state.meta['country-code']} onChange={this.handleMetaInput.bind(this)} />
+					</div>
+				</div>
+			</div>
+		)
+	}
+
+	render({ updateUserMeta }) {
+		return (
+			<div class={style.user_details}>
+				<div class="row">
+					<div class="columns six">
+						<h2>{this.state.meta.name || this.state.meta.email }</h2>
+					</div>
+					<div class="columns three">
+						<input class="u-full-width" type="button" value="Delete User" />
+					</div>
+					<div class="columns three">
+						<input class="u-full-width button-primary" type="button" value="Update User" onClick={ev => updateUserMeta(this.state.meta)} />
+					</div>
+				</div>
+				{this.renderMeta()}
+				<CustomFields fields={this.state.meta}
+					onUpdate={this.customMetaUpdated.bind(this)}
+					ignoreFields={this.state.ignoreInCustomFields} />
+			</div>
+		)
+	}
 }
-
-const UserDetails = ({ user, updateUserMeta }) => {
-	if (!user) return <div class={style.user_details}></div>
-	userMeta.name = user.meta.name
-	userMeta.status = user.meta.status
-	userMeta.email = user.meta.email
-	userMeta.phone = user.meta.phone
-	userMeta.location = user.meta.location
-	userMeta['country-code'] = user.meta['country-code']
-	return (
-		<div class={style.user_details}>
-			<div class="row">
-				<div class="columns six">
-					<h2>{user.meta.name || user.meta.email }</h2>
-				</div>
-				<div class="columns three">
-					<input class="u-full-width" type="button" value="Delete User" />
-				</div>
-				<div class="columns three">
-					<input class="u-full-width button-primary" type="button" value="Update User" onClick={ev => updateUserMeta(userMeta)} />
-				</div>
-			</div>
-			<div class="row">
-				<div class="columns six">
-					<label for="name">Name</label>
-					<input class="u-full-width" type="text" id="name" value={user.meta.name} onChange={handleInputChange} />
-				</div>
-				<div class="columns six">
-					<label for="status">Status</label>
-					<input class="u-full-width" type="text" id="status" value={user.meta.status} onChange={handleInputChange} />
-				</div>
-			</div>
-			<div class="row">
-				<div class="columns six">
-					<label for="email">Email</label>
-					<input class="u-full-width" type="text" id="email" value={user.meta.email} onChange={handleInputChange} />
-				</div>
-				<div class="columns six">
-					<label for="phone">Phone</label>
-					<input class="u-full-width" type="text" id="phone" value={user.meta.phone} onChange={handleInputChange} />
-				</div>
-			</div>
-			<div class="row">
-				<div class="columns six">
-					<label for="location">Location</label>
-					<input class="u-full-width" type="text" id="location" value={user.meta.location} onChange={handleInputChange} />
-				</div>
-				<div class="columns six">
-					<label for="country-code">Country Code</label>
-					<input class="u-full-width" type="text" id="country-code" value={user.meta['country-code']} onChange={handleInputChange} />
-				</div>
-			</div>
-		</div>
-	)
-}
-
-export default UserDetails

@@ -36,7 +36,7 @@ const fetchUserMeta = uid => {
   return fetch(state.backend + '/users/' + uid + '/meta')
 }
 
-const updateUserMeta = (uid, meta) => {
+const setUserMeta = (uid, meta) => {
   return fetch(state.backend + '/users/' + uid + '/meta', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -66,7 +66,7 @@ const fetchThreadMeta = tid => {
   return fetch(state.backend + '/threads/' + tid + '/meta')
 }
 
-const updateThreadMeta = (tid, meta) => {
+const setThreadMeta = (tid, meta) => {
   return fetch(state.backend + '/threads/' + tid + '/meta', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
@@ -93,14 +93,14 @@ export default {
   fetchUsers,
   fetchUser,
   fetchUserMeta,
-  updateUserMeta,
+  setUserMeta,
   deleteUser,
 
   fetchThreads,
   fetchPublicThreads,
   fetchThread,
   fetchThreadMeta,
-  updateThreadMeta,
+  setThreadMeta,
   deleteThreadMessage,
   deleteThread
 }

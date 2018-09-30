@@ -1,0 +1,16 @@
+.delete_button {
+  background: #D00;
+  color: white;
+  padding: 0;
+  border: none;
+  font-size: 1.4em;
+}
+
+.delete_button:hover {
+  background: #F00;
+  color: white;
+}
+
+.delete_button svg {
+  pointer-events: none;
+}

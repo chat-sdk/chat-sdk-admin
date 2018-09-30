@@ -5,3 +5,9 @@
 	min-height: 100%;
 	margin: auto;
 }
+
+.widget {
+	padding: 20px;
+  background: #EEE;
+  border-radius: 4px;
+}

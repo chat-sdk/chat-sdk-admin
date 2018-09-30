@@ -1,4 +1,3 @@
-import { route } from 'preact-router'
 import { Link } from 'preact-router/match'
 
 import style from './style'
@@ -33,7 +32,7 @@ const renderThreadsList = (threads, selectThread) => {
 }
 
 const PublicThreads = ({ threads, filterThreads, selectThread, refresh }) => (
-	<div class={style.public_threads}>
+	<div>
 		<div class="row">
 			<div class="columns three">
 				<input class="u-full-width button-primary" type="button" value="Create Room" />

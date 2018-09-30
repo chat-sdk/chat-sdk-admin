@@ -55,9 +55,9 @@ module.exports = () => {
     return fetchData(db.ref(root + '/threads/' + tid + '/users/' + uid))
   }
 
-  const updateThreadMeta = async (root, tid, meta) => {
-    await db.ref(root + '/threads/' + tid + '/details').update(meta)
-    return db.ref(root + '/threads/' + tid + '/meta').update(meta)
+  const setThreadMeta = async (root, tid, meta) => {
+    await db.ref(root + '/threads/' + tid + '/details').set(meta)
+    return db.ref(root + '/threads/' + tid + '/meta').set(meta)
   }
 
   const deleteThreadMessage = async (root, tid, mid) => {
@@ -119,8 +119,8 @@ module.exports = () => {
     return fetchData(db.ref(root + '/users/' + uid + '/threads'))
   }
 
-  const updateUserMeta = (root, uid, meta) => {
-    return db.ref(root + '/users/' + uid + '/meta').update(meta)
+  const setUserMeta = (root, uid, meta) => {
+    return db.ref(root + '/users/' + uid + '/meta').set(meta)
   }
 
   const deleteUser = (root, uid) => {
@@ -164,7 +164,7 @@ module.exports = () => {
     fetchThreadMessage,
     fetchThreadUsers,
     fetchThreadUser,
-    updateThreadMeta,
+    setThreadMeta,
     deleteThreadMessage,
     deleteThreadUser,
     deleteThread,
@@ -175,7 +175,7 @@ module.exports = () => {
     fetchUserMeta,
     fetchUserMetaValue,
     fetchUserThreads,
-    updateUserMeta,
+    setUserMeta,
     deleteUser,
 
     fetchFlaggedMessages,

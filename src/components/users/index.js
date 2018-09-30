@@ -1,4 +1,3 @@
-import { route } from 'preact-router'
 import { Link } from 'preact-router/match'
 
 import style from './style'
@@ -53,7 +52,7 @@ const renderUsersList = (users, selectUser) => {
 }
 
 const Users = ({ users, filterUsers, selectUser, refresh }) => (
-	<div class={style.users}>
+	<div>
 		<div class="row">
 			<div class="columns three">
 				<select class="u-full-width" data-filter="key" value={filterState.key} onChange={handleFilterInput(filterUsers)}>

@@ -1,5 +1,4 @@
 import { h, Component } from 'preact'
-import { route } from 'preact-router'
 
 import style from './style'
 import api from '../../lib/api'
@@ -97,12 +96,12 @@ export default class Dashboard extends Component {
 	}
 
 	async updateUserMeta(meta) {
-		await api.updateUserMeta(this.state.selectedUser, meta)
+		await api.setUserMeta(this.state.selectedUser, meta)
 		return this.loadUsers()
 	}
 
 	async updateThreadMeta(meta) {
-		await api.updateThreadMeta(this.state.selectedThread, meta)
+		await api.setThreadMeta(this.state.selectedThread, meta)
 		return this.loadPublicThreads()
 	}
 
@@ -206,8 +205,13 @@ export default class Dashboard extends Component {
 		switch (tab) {
 			case 'users':
 				if (this.state.selectedUser) {
-					return <UserDetails user={(this.state.users || {})[this.state.selectedUser]}
-						updateUserMeta={this.updateUserMeta.bind(this)} />
+					if (this.state.users) {
+						const user = this.state.users[this.state.selectedUser]
+						return <UserDetails user={user}
+							updateUserMeta={this.updateUserMeta.bind(this)} />
+					} else {
+						return <div>Loading...</div>
+					}
 				} else {
 					return <Users users={this.state.filteredUsers || this.state.users}
 						filterUsers={this.filterUsers.bind(this)}
@@ -216,8 +220,13 @@ export default class Dashboard extends Component {
 				}
 			case 'public-threads':
 				if (this.state.selectedThread) {
-					return <ThreadDetails thread={(this.state.publicThreads || {})[this.state.selectedThread]}
-						updateThreadMeta={this.updateThreadMeta.bind(this)} />
+					if (this.state.publicThreads) {
+						const thread = this.state.publicThreads[this.state.selectedThread]
+						return <ThreadDetails thread={thread}
+							updateThreadMeta={this.updateThreadMeta.bind(this)} />
+					} else {
+						return <div>Loading...</div>
+					}
 				} else {
 					return <PublicThreads threads={this.state.filteredThreads || this.state.publicThreads}
 						filterThreads={this.filterPublicThreads.bind(this)}
@@ -250,7 +259,9 @@ export default class Dashboard extends Component {
 					</div>
 				</div>
 				{this.renderTabBar.bind(this)()}
-				{this.renderComponentForTab(this.state.selectedTab)}
+				<div class={style.widget}>
+					{this.renderComponentForTab(this.state.selectedTab)}
+				</div>
 			</div>
 		)
 	}

@@ -1,4 +1,3 @@
-import { route } from 'preact-router'
 import { Link } from 'preact-router/match'
 
 import style from './style'
@@ -36,7 +35,7 @@ const renderMessages = (messages, users, unflagMessage, deleteMessage, refresh) 
 }
 
 const Moderation = ({ messages, filterMessages, users, unflagMessage, deleteMessage, refresh }) => (
-	<div class={style.moderation}>
+	<div>
 		<div class="row">
 			<div class="columns four">
 				<input class="u-full-width" data-filter="user" type="text" placeholder="Any User" value={filterState.user} onInput={handleFilterInput(filterMessages)} />
