@@ -1,6 +1,4 @@
 import { Link } from 'preact-router/match'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTimes } from '@fortawesome/free-solid-svg-icons'
 
 import style from './style'
 
@@ -73,7 +71,7 @@ const renderFields = (fields, ignoreFields, onUpdate) => {
 				</div>
 				<div class="column one">
 					<Link class={'button u-full-width ' + style.delete_button} data-field-row={key} onClick={removeField(fields, onUpdate)}>
-						<FontAwesomeIcon icon={faTimes} />
+						X
 					</Link>
 				</div>
 			</div>
