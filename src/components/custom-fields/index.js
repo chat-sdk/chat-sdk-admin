@@ -64,10 +64,12 @@ const renderFields = (fields, ignoreFields, onUpdate) => {
 		return (
 			<div class="row">
 				<div class="columns five">
-					<input class="u-full-width" type="text" data-field-type='key' data-field-row={key} value={key} onChange={handleInput(fields, ignoreFields, onUpdate)} />
+					<input class="u-full-width" type="text" data-field-type='key' data-field-row={key} value={key}
+						onInput={handleInput(fields, ignoreFields, onUpdate)} />
 				</div>
 				<div class="columns six">
-					<input class="u-full-width" type="text" data-field-type='value' data-field-row={key} value={fields[key]} onChange={handleInput(fields, ignoreFields, onUpdate)} />
+					<input class="u-full-width" type="text" data-field-type='value' data-field-row={key} value={fields[key]}
+						onInput={handleInput(fields, ignoreFields, onUpdate)} />
 				</div>
 				<div class="column one">
 					<Link class={'button u-full-width ' + style.delete_button} data-field-row={key} onClick={removeField(fields, onUpdate)}>

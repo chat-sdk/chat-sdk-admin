@@ -5,10 +5,19 @@ import CustomFields from '../custom-fields'
 export default class ThreadDetails extends Component {
 	constructor(props) {
 		super(props)
+		console.log('ThreadDetails:', 'init()')
 		this.state = {
-			meta: { ...props.thread.details, ...(props.thread.meta||{}) },
+			meta: this.getThreadMeta(props.thread),
 			ignoreInCustomFields: ['name', 'name-lowercase', 'creation-date', 'creator-entity-id', 'type', 'type_v4']
 		}
+	}
+
+	getThreadMeta(thread) {
+		return { ...thread.details, ...(thread.meta || {}) }
+	}
+
+	isMetaDifferent(a, b) {
+		return JSON.stringify(a) !== JSON.stringify(b)
 	}
 
 	handleMetaInput(ev) {
@@ -17,14 +26,18 @@ export default class ThreadDetails extends Component {
 		if (ev.target.id === 'name') {
 			meta['name-lowercase'] = ev.target.value.toLowerCase()
 		}
-		this.setState({ meta })
+		this.setState({ meta, updateEnabled: this.isMetaDifferent(meta, this.getThreadMeta(this.props.thread)) })
 	}
 
 	customMetaUpdated(meta) {
-		this.setState({ meta })
+		this.setState({ meta, updateEnabled: this.isMetaDifferent(meta, this.getThreadMeta(this.props.thread)) })
 	}
 
-	render({ updateThreadMeta }) {
+	render({ updateThreadMeta, thread }) {
+		console.log('ThreadDetails:', 'render()')
+		if (this.isMetaDifferent(this.state.meta, this.getThreadMeta(thread))) {
+			console.log('meta is different:', this.state.meta.name, this.getThreadMeta(thread).name)
+		}
 		return (
 			<div>
 				<div class="row">
@@ -32,10 +45,13 @@ export default class ThreadDetails extends Component {
 						<h2>{this.state.meta.name}</h2>
 					</div>
 					<div class="columns three">
-						<input class="u-full-width" type="button" value="Delete Room" />
+						<input class="u-full-width delete-button" type="button" value="Delete Room" />
 					</div>
 					<div class="columns three">
-						<input class="u-full-width button-primary" type="button" value="Update Room" onClick={ev => updateThreadMeta(this.state.meta)} />
+						{this.state.updateEnabled
+							? <input class="u-full-width button-primary" type="button" value="Update Room" onClick={ev => updateThreadMeta(this.state.meta)} />
+							: <input class="u-full-width button" disabled="disabled" type="button" value="Update Room" />
+						}
 					</div>
 				</div>
 				<div class="row">

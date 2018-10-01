@@ -9,63 +9,76 @@ import PublicThreads from '../../components/public-threads'
 import ThreadDetails from '../../components/thread-details'
 import Moderation from '../../components/moderation'
 
-const inputState = {
-	backend: localStorage.getItem('backend')
-}
-
 export default class Dashboard extends Component {
 	state = {
+		backend: localStorage.getItem('backend'),
 		selectedTab: localStorage.getItem('selectedTab') || 'users',
-
-		users: null,
 		selectedUser: localStorage.getItem('selectedUser'),
-		filteredUsers: null,
-		filterIndex: null,
-		filterValue: null,
-
-		publicThreads: null,
-		selectedThread: localStorage.getItem('selectedThread'),
-		filteredThreads: null,
-
-		flaggedMessages: null,
-		filteredMessages: null,
-		filterUser: null,
-		filterMessage: null
+		selectedThread: localStorage.getItem('selectedThread')
 	}
 
-	handleInputChange(ev) {
-		inputState[ev.target.id] = ev.target.value
+	handleBackendInput(ev) {
+		this.setState({ backend: ev.target.value })
 	}
 
-	loadUsers() {
-		return api.fetchUsers()
-			.then(data => data.json())
-			.then(data => this.setState({ users: data }))
-			.then(this.filterUsers(this.state.filterIndex, this.state.filterValue))
-			.catch(err => this.setState({ users: null }))
+	async loadUsers(update = true) {
+		console.log('Dashboard: loadUsers()')
+		try {
+			const response = await api.fetchUsers()
+			const users = await response.json()
+			const filteredUsersData = this.getFilteredUsers(users, this.state.filterIndex, this.state.filterQuery)
+			if (update) {
+				this.setState({ users, ...filteredUsersData })
+			}
+			return { users, ...filteredUsersData }
+		} catch (err) {
+			if (update) {
+				this.setState({ users: null })
+				console.error(err)
+			} else throw err
+		}
 	}
 
-	loadPublicThreads() {
-		return this.loadUsers()
-			.then(() => api.fetchPublicThreads())
-			.then(data => data.json())
-			.then(data => this.setState({ publicThreads: data }))
-			.then(this.filterPublicThreads(this.state.filterThread))
-			.catch(err => this.setState({ publicThreads: null }))
+	async loadPublicThreads(update = true) {
+		console.log('Dashboard: loadPublicThreads()')
+		try {
+			const usersData = await this.loadUsers(false)
+			const response = await api.fetchPublicThreads()
+			const publicThreads = await response.json()
+			const filterdThreadsData = await this.getFilteredPublicThreads(publicThreads, this.state.filterQuery)
+			if (update) {
+				this.setState({ ...usersData, publicThreads, ...filterdThreadsData })
+			}
+			return { ...usersData, publicThreads, ...filterdThreadsData }
+		} catch (err) {
+			if (update) {
+				this.setState({ publicThreads: null })
+				console.error(err)
+			} else throw err
+		}
 	}
 
-	loadFlaggedMessages() {
-		return this.loadUsers()
-			.then(() => api.fetchFlaggedMessages())
-			.then(data => data.json())
-			.then(data => this.setState({ flaggedMessages: data }))
-			.then(this.filterFlaggedMessages(this.state.filterUser, this.state.filterMessage))
-			.catch(err => this.setState({ flaggedMessages: null }))
+	async loadFlaggedMessages(update = true) {
+		console.log('Dashboard: loadFlaggedMessages()')
+		try {
+			const usersData = await this.loadUsers(false)
+			const response = await api.fetchFlaggedMessages()
+			const flaggedMessages = await response.json()
+			const filterdMessagesData = await this.getFilteredFlaggedMessages(flaggedMessages, this.state.filterSenderQuery, this.state.filterMessageQuery)
+			const data = { ...usersData, flaggedMessages, ...filterdMessagesData }
+			if (update) this.setState(data)
+			return data
+		} catch (err) {
+			if (update) {
+				this.setState({ flaggedMessages: null })
+				console.error(err)
+			} else throw err
+		}
 	}
 
 	loadData() {
-		localStorage.setItem('backend', inputState.backend)
-		api.init(inputState.backend)
+		localStorage.setItem('backend', this.state.backend || '')
+		api.init(this.state.backend)
 		if (this.state.selectedTab === 'users') {
 			this.loadUsers().catch(console.error)
 		}
@@ -113,68 +126,75 @@ export default class Dashboard extends Component {
 		return keys.reduce((o, k) => (o[k] = objs[k], o), {})
 	}
 
-	getFilteredUsers(index, filter) {
-		let uids = Object.keys(this.state.users || {})
-		if (filter && uids.length > 0) {
-			uids = uids.filter(uid => {
-				if (index === 'uid') return this.isMatch(uid, filter)
-				else return this.isMatch(this.state.users[uid].meta[index], filter)
+	getFilteredUsers(users, index, query) {
+		if (users && query) {
+			const uids = Object.keys(users).filter(uid => {
+				if (index === 'uid') return this.isMatch(uid, query)
+				else return this.isMatch((users)[uid].meta[index], query)
 			})
-			return this.reduceKeysToObjects(uids, this.state.users)
-		} else {
-			return null
-		}
-	}
-
-	filterUsers(index, filter) {
-		const filteredUsers = this.getFilteredUsers(index, filter)
-		if (filteredUsers) {
-			this.setState({ filteredUsers, filterIndex: index, filterValue: filter })
-		} else {
-			this.setState({ filteredUsers: null, filterIndex: null, filterValue: null })
-		}
-	}
-
-	filterFlaggedMessages(senderFilter, messageFilter) {
-		let mids = Object.keys(this.state.flaggedMessages || {})
-		if ((senderFilter || messageFilter) && mids.length > 0) {
-			if (senderFilter) {
-				mids = mids.filter(mid => {
-					const message = this.state.flaggedMessages[mid]
-					const user = this.state.users[message['sender-entity-id']]
-					return user && this.isMatch(user.meta.name, senderFilter)
-				})
+			return {
+				filteredUsers: this.reduceKeysToObjects(uids, users),
+				filterIndex: index,
+				filterQuery: query
 			}
-			if (messageFilter) {
-				mids = mids.filter(mid => this.isMatch(this.state.flaggedMessages[mid].message, messageFilter))
-			}
-			const filteredMessages = this.reduceKeysToObjects(mids, this.state.flaggedMessages)
-			this.setState({ filteredMessages, filterUser: senderFilter, filterMessage: messageFilter })
-		} else {
-			this.setState({ filteredMessages: null, filterUser: null, filterMessage: null })
 		}
+		return { filteredUsers: null, filterIndex: null, filterQuery: null }
 	}
 
-	filterPublicThreads(filter) {
-		let tids = Object.keys(this.state.publicThreads || {})
-		if (filter && tids.length > 0) {
-			tids = tids.filter(tid => {
+	getFilteredPublicThreads(publicThreads, query) {
+		if (publicThreads && query) {
+			const tids = Object.keys(publicThreads).filter(tid => {
 				const thread = this.state.publicThreads[tid]
 				if (thread.meta && thread.meta.name) {
-					return this.isMatch(thread.meta.name, filter)
+					return this.isMatch(thread.meta.name, query)
 				} else {
-					return this.isMatch(thread.details.name, filter)
+					return this.isMatch(thread.details.name, query)
 				}
 			})
-			const filteredThreads = this.reduceKeysToObjects(tids, this.state.publicThreads)
-			this.setState({ filteredThreads, filterThread: filter })
-		} else {
-			this.setState({ filteredThreads: null, filterThread: null })
+			return {
+				filteredPublicThreads: this.reduceKeysToObjects(tids, publicThreads),
+				filterQuery: query
+			}
 		}
+		return { filteredPublicThreads: null, filterQuery: null }
+	}
+
+	getFilteredFlaggedMessages(flaggedMessages, senderQuery, messageQuery) {
+		if (flaggedMessages && (senderQuery || messageQuery)) {
+			let mids = Object.keys(flaggedMessages)
+			if (senderQuery) {
+				mids = mids.filter(mid => {
+					const message = flaggedMessages[mid]
+					const user = this.state.users[message['sender-entity-id']]
+					return user && this.isMatch(user.meta.name, senderQuery)
+				})
+			}
+			if (messageQuery) {
+				mids = mids.filter(mid => this.isMatch(flaggedMessages[mid].message, messageQuery))
+			}
+			return {
+				filteredFlaggedMessages: this.reduceKeysToObjects(mids, flaggedMessages),
+				filterSenderQuery: senderQuery,
+				filterMessageQuery: messageQuery
+			}
+		}
+		return { filteredFlaggedMessages: null, filterSenderQuery: null, filterMessageQuery: null }
+	}
+
+	filterUsers(index, query) {
+		this.setState(this.getFilteredUsers(this.state.users, index, query))
+	}
+
+	filterPublicThreads(query) {
+		this.setState(this.getFilteredPublicThreads(this.state.publicThreads, query))
+	}
+
+	filterFlaggedMessages(senderQuery, messageQuery) {
+		this.setState(this.getFilteredFlaggedMessages(this.state.flaggedMessages, senderQuery, messageQuery))
 	}
 
 	componentDidMount() {
-		if (inputState.backend) {
+		if (this.state.backend) {
 			this.loadData()
 		}
 	}
@@ -228,18 +248,26 @@ export default class Dashboard extends Component {
 						return <div>Loading...</div>
 					}
 				} else {
-					return <PublicThreads threads={this.state.filteredThreads || this.state.publicThreads}
+					return <PublicThreads threads={this.state.filteredPublicThreads || this.state.publicThreads}
 						filterThreads={this.filterPublicThreads.bind(this)}
 						selectThread={this.selectThread.bind(this)}
 						refresh={this.loadPublicThreads.bind(this)} />
 				}
 			case 'moderation':
-				return <Moderation messages={this.state.filteredMessages || this.state.flaggedMessages}
-					users={this.state.users}
-					filterMessages={this.filterFlaggedMessages.bind(this)}
-					unflagMessage={api.unflagMessage.bind(this)}
-					deleteMessage={api.deleteFlaggedMessage.bind(this)}
-					refresh={this.loadFlaggedMessages.bind(this)} />
+				if (this.state.flaggedMessages) {
+					if (this.state.users) {
+						return <Moderation messages={this.state.filteredFlaggedMessages || this.state.flaggedMessages}
+							users={this.state.users}
+							filterMessages={this.filterFlaggedMessages.bind(this)}
+							unflagMessage={api.unflagMessage.bind(this)}
+							deleteMessage={api.deleteFlaggedMessage.bind(this)}
+							refresh={this.loadFlaggedMessages.bind(this)} />
+					} else {
+						return <div>Loading...</div>
+					}
+				} else {
+					return <div>No flagged messages found</div>
+				}
 			default:
 				return <div />
 		}
@@ -247,12 +275,13 @@ export default class Dashboard extends Component {
 
 	render() {
 		// if (!firebase.auth().currentUser) route('/signin')
+		console.log('Dashboard: render()')
 		return (
 			<div class={style.dashboard}>
 				<label for="backend">API Backend</label>
 				<div class="row">
 					<div class="ten columns">
-						<input class="u-full-width" type="text" id="backend" value={inputState.backend} onChange={this.handleInputChange.bind(this)} />
+						<input class="u-full-width" type="text" id="backend" value={this.state.backend} onChange={this.handleBackendInput.bind(this)} />
 					</div>
 					<div class="two columns">
 						<input class="u-full-width  button-primary" type="button" value="Load" onClick={this.loadData.bind(this)} />

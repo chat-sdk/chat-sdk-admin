@@ -18,3 +18,15 @@ html, body {
 #app {
 	height: 100%;
 }
+
+input.delete-button {
+  background: #D00;
+  color: white;
+  padding: 0;
+  border: none;
+}
+
+input.delete-button:hover, input.delete-button:active, input.delete-button:visited, input.delete-button:focus {
+  background-color: #F00;
+	color: white;
+}
