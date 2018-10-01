@@ -63,6 +63,10 @@ export default class UserDetails extends Component {
 						<input class="u-full-width" type="text" id="country-code" value={this.state.meta['country-code']} onInput={this.handleMetaInput.bind(this)} />
 					</div>
 				</div>
+				<div class="row">
+					<label for="pictureURL">Avatar URL</label>
+					<input class="u-full-width" type="text" id="pictureURL" value={this.state.meta.pictureURL} onInput={this.handleMetaInput.bind(this)} />
+				</div>
 			</div>
 		)
 	}
