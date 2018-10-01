@@ -38,7 +38,7 @@ const routes = [
   { method: 'GET', path: '/:root/threads/:tid', handler: threads.fetchThread },
   { method: 'DELETE', path: '/:root/threads/:tid', handler: threads.deleteThread },
   { method: 'GET', path: '/:root/threads/:tid/meta', handler: threads.fetchThreadMeta },
-  { method: 'PUT', path: '/:root/threads/:tid/meta', handler: threads.setThreadMeta },
+  { method: 'POST', path: '/:root/threads/:tid/meta', handler: threads.setThreadMeta },
   { method: 'GET', path: '/:root/threads/:tid/meta/:index', handler: threads.fetchThreadMetaValue },
   { method: 'GET', path: '/:root/threads/:tid/messages', handler: threads.fetchThreadMessages },
   { method: 'GET', path: '/:root/threads/:tid/messages/:mid', handler: threads.fetchThreadMessage },
