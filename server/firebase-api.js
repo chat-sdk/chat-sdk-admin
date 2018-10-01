@@ -12,6 +12,14 @@ module.exports = () => {
 
   const fetchData = ref => ref.once('value').then(s => s.val())
 
+  const fetchCombinedThreadMeta = async ref => {
+    const results = await Promise.all([
+      fetchData(ref.child('details')),
+      fetchData(ref.child('meta'))
+    ])
+    return { ...results[0], ...results[1] }
+  }
+
   const fetchOnline = root => {
     return fetchData(db.ref(root + '/online'))
   }
@@ -36,7 +44,12 @@ module.exports = () => {
   }
 
   const fetchThreadMeta = (root, tid) => {
-    return fetchData(db.ref(root + '/threads/' + tid + '/meta'))
+    return fetchCombinedThreadMeta(db.ref(root + '/threads/' + tid))
+  }
+
+  const fetchThreadMetaValue = async (root, tid, index) => {
+    const data = await fetchCombinedThreadMeta(db.ref(root + '/threads/' + tid))
+    return (data||{})[index]
   }
 
   const fetchThreadMessages = (root, tid) => {
@@ -160,6 +173,7 @@ module.exports = () => {
     fetchPublicThreads,
     fetchThread,
     fetchThreadMeta,
+    fetchThreadMetaValue,
     fetchThreadMessages,
     fetchThreadMessage,
     fetchThreadUsers,
@@ -179,6 +193,7 @@ module.exports = () => {
     deleteUser,
 
     fetchFlaggedMessages,
+    fetchFlaggedMessage,
     flagMessage,
     unflagMessage,
     deleteFlaggedMessage

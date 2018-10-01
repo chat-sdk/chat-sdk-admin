@@ -1,227 +1,69 @@
 'use strict'
 
+const compression = require('compression')
 const bodyParser = require('body-parser')
 const express = require('express')
-const corser = require('corser')
 const http = require('http')
 const ip = require('ip')
 
-const firebaseApi = require('./firebase-api')
-const api = firebaseApi()
+const cors = require('./cors')
+const api = require('./firebase-api')()
+const users = require('./routes/users')(api)
+const threads = require('./routes/threads')(api)
+const moderation = require('./routes/moderation')(api)
 
 const app = express()
+app.use(compression())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
-app.use(corser.create({
-  methods: corser.simpleMethods.concat(['PUT', 'DELETE'])
-}))
+app.use(cors())
 
-app.get('/:root/online', (req, res) => {
+const fetchOnline = (req, res, next) => {
   api.fetchOnline(req.params.root)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
+    .then(data => (data && res.json(data) || res.sendStatus(404), next()))
+    .catch(err => (res.send(err.message || err), next()))
+}
+
+const routes = [
+  { method: 'GET', path: '/:root/online', handler: fetchOnline },
+  // Moderation
+  { method: 'GET', path: '/:root/flagged-messages', handler: moderation.fetchFlaggedMessages },
+  { method: 'GET', path: '/:root/flagged-messages/:mid', handler: moderation.fetchFlaggedMessage },
+  { method: 'DELETE', path: '/:root/flagged-messages/:mid', handler: moderation.deleteFlaggedMessage },
+  { method: 'PUT', path: '/:root/flag-message/:tid/:mid', handler: moderation.flagMessage },
+  { method: 'PUT', path: '/:root/unflag-message/:mid', handler: moderation.unflagMessage },
+  // Threads
+  { method: 'GET', path: '/:root/threads', handler: threads.fetchThreads },
+  { method: 'GET', path: '/:root/public-threads', handler: threads.fetchPublicThreads },
+  { method: 'GET', path: '/:root/threads/:tid', handler: threads.fetchThread },
+  { method: 'DELETE', path: '/:root/threads/:tid', handler: threads.deleteThread },
+  { method: 'GET', path: '/:root/threads/:tid/meta', handler: threads.fetchThreadMeta },
+  { method: 'PUT', path: '/:root/threads/:tid/meta', handler: threads.setThreadMeta },
+  { method: 'GET', path: '/:root/threads/:tid/meta/:index', handler: threads.fetchThreadMetaValue },
+  { method: 'GET', path: '/:root/threads/:tid/messages', handler: threads.fetchThreadMessages },
+  { method: 'GET', path: '/:root/threads/:tid/messages/:mid', handler: threads.fetchThreadMessage },
+  { method: 'DELETE', path: '/:root/threads/:tid/messages/:mid', handler: threads.deleteThreadMessage },
+  { method: 'GET', path: '/:root/threads/:tid/users', handler: threads.fetchThreadUsers },
+  { method: 'GET', path: '/:root/threads/:tid/users/:uid', handler: threads.fetchThreadUser },
+  { method: 'DELETE', path: '/:root/threads/:tid/users/:uid', handler: threads.deleteThreadUser },
+  // Users
+  { method: 'GET', path: '/:root/users', handler: users.fetchUsers },
+  { method: 'GET', path: '/:root/users/:uid', handler: users.fetchUser },
+  { method: 'DELETE', path: '/:root/users/:uid', handler: users.deleteUser },
+  { method: 'GET', path: '/:root/users/:uid/meta', handler: users.fetchUserMeta },
+  { method: 'POST', path: '/:root/users/:uid/meta', handler: users.setUserMeta },
+  { method: 'GET', path: '/:root/users/:uid/meta/:index', handler: users.fetchUserMetaValue },
+  { method: 'GET', path: '/:root/users/:uid/threads', handler: users.fetchUserThreads },
+  { method: 'GET', path: '/:root/users/by/:index/:query', handler: users.fetchUsersByMetaValue },
+]
+
+app.get('/', (req, res) => {
+  res.json(routes.map(r => ({ method: r.method, path: r.path })))
 })
 
-// Moderation
-
-app.get('/:root/flagged-messages', (req, res) => {
-  api.fetchFlaggedMessages(req.params.root)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.put('/:root/flag-message/:tid/:mid', (req, res) => {
-  api.flagMessage(req.params.root, req.params.mid, req.params.tid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.put('/:root/unflag-message/:mid', (req, res) => {
-  api.unflagMessage(req.params.root, req.params.mid)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-app.delete('/:root/flagged-messages/:mid', (req, res) => {
-  api.deleteFlaggedMessage(req.params.root, req.params.mid)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-// Threads
-
-app.get('/:root/threads', (req, res) => {
-  api.fetchThreads(req.params.root)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/public-threads', (req, res) => {
-  api.fetchPublicThreads(req.params.root)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/threads/:tid', (req, res) => {
-  api.fetchThread(req.params.root, req.params.tid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/threads/:tid/meta', (req, res) => {
-  api.fetchThreadMeta(req.params.root, req.params.tid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/threads/:tid/messages', (req, res) => {
-  api.fetchThreadMessages(req.params.root, req.params.tid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/threads/:tid/messages/:mid', (req, res) => {
-  api.fetchThreadMessage(req.params.root, req.params.tid, req.params.mid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/threads/:tid/users', (req, res) => {
-  api.fetchThreadUsers(req.params.root, req.params.tid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/threads/:tid/users/:uid', (req, res) => {
-  api.fetchThreadUser(req.params.root, req.params.tid, req.params.uid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.post('/:root/threads/:tid/meta', (req, res) => {
-  api.setThreadMeta(req.params.root, req.params.tid, req.body)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-app.delete('/:root/threads/:tid/messages/:mid', (req, res) => {
-  api.deleteThreadMessage(req.params.root, req.params.tid, req.params.mid)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-app.delete('/:root/threads/:tid/users/:uid', (req, res) => {
-  api.deleteThreadUser(req.params.root, req.params.tid, req.params.uid)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-app.delete('/:root/threads/:tid', (req, res) => {
-  api.deleteThread(req.params.root, req.params.tid)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-// Users
-
-app.get('/:root/users', (req, res) => {
-  api.fetchUsers(req.params.root)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/users/:uid', (req, res) => {
-  api.fetchUser(req.params.root, req.params.uid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/users/by/:index/:value', (req, res) => {
-  api.fetchUsersByMetaValue(req.params.root, req.params.index, req.params.value)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/users/:uid/meta', (req, res) => {
-  api.fetchUserMeta(req.params.root, req.params.uid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/users/:uid/meta/:index', (req, res) => {
-  api.fetchUserMetaValue(req.params.root, req.params.uid, req.params.index)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.get('/:root/users/:uid/threads', (req, res) => {
-  api.fetchUserThreads(req.params.root, req.params.uid)
-    .then(data => {
-      if (data) res.send(data)
-      else res.sendStatus(404)
-    })
-    .catch(err => res.send(err.message || err))
-})
-
-app.post('/:root/users/:uid/meta', (req, res) => {
-  api.setUserMeta(req.params.root, req.params.uid, req.body)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
-
-app.delete('/:root/users/:uid', (req, res) => {
-  api.deleteUser(req.params.root, req.params.uid)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(500))
-})
+for (const route of routes) {
+  app[route.method.toLowerCase()](route.path, route.handler)
+}
 
 const port = Number(process.env.PORT || 3000)
 http.createServer(app).listen(port, ip.address(), err => {
