@@ -7,8 +7,8 @@ const filterOptions = {
 	name: 'Name',
 	email: 'Email',
 	phone: 'Phone',
-	'country-code': 'Country',
-	location: 'Location'
+	location: 'Location',
+	'country-code': 'Country'
 }
 
 const filterState = {
