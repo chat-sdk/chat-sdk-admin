@@ -17,10 +17,13 @@ const renderMessages = (messages, users, unflagMessage, deleteMessage, refresh) 
 	if (mids.length > 0) {
 		return mids.map(mid => {
 			const message = messages[mid]
-			const avatar = users[message['sender-entity-id']].meta.pictureURL
+			const senderID = message['sender-entity-id']
+			const avatar = users[senderID].meta.pictureURL
 			return (
 				<li class={style.flagged_list_item}>
-					{avatar ? <img class={style.user_avatar} src={avatar} /> : <div class={style.user_avatar} />}
+					<Link class={style.user_avatar_link} href={'/users/' + senderID}>
+						{avatar ? <img class={style.user_avatar} src={avatar} /> : <div class={style.user_avatar} />}
+					</Link>
 					<span class="message">{message.message}</span>
 					<span class={style.flagged_list_right}>
 						<Link href="#" onClick={ev => unflagMessage(mid).then(refresh)}>unflag</Link>

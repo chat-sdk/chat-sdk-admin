@@ -16,6 +16,10 @@
   align-items: center;
 }
 
+.flagged_list .user_avatar_link {
+  display: flex;
+}
+
 .flagged_list .user_avatar {
   width: 32px;
   height: 32px;

@@ -1,4 +1,5 @@
 import { h, Component } from 'preact'
+import { Router, route } from 'preact-router'
 
 import style from './style'
 import api from '../../lib/api'
@@ -23,12 +24,15 @@ const localStorage = {
 	}
 }
 
+const tabs = {
+	users: 'users',
+	publicThreads: 'public-threads',
+	flaggedMessages: 'flagged-messages'
+}
+
 export default class Dashboard extends Component {
 	state = {
-		backend: localStorage.getItem('backend'),
-		selectedTab: localStorage.getItem('selectedTab') || 'users',
-		selectedUser: localStorage.getItem('selectedUser'),
-		selectedThread: localStorage.getItem('selectedThread')
+		backend: localStorage.getItem('backend')
 	}
 
 	handleBackendInput(ev) {
@@ -40,7 +44,7 @@ export default class Dashboard extends Component {
 		try {
 			const response = await api.fetchUsers()
 			const users = await response.json()
-			const filteredUsersData = this.getFilteredUsers(users, this.state.filterIndex, this.state.filterQuery)
+			const filteredUsersData = this.getFilteredUsers(users, this.state.filterUserIndex, this.state.filterUserQuery)
 			if (update) {
 				this.setState({ users, ...filteredUsersData })
 			}
@@ -59,7 +63,7 @@ export default class Dashboard extends Component {
 			const usersData = await this.loadUsers(false)
 			const response = await api.fetchPublicThreads()
 			const publicThreads = await response.json()
-			const filterdThreadsData = await this.getFilteredPublicThreads(publicThreads, this.state.filterQuery)
+			const filterdThreadsData = await this.getFilteredPublicThreads(publicThreads, this.state.filterThreadQuery)
 			if (update) {
 				this.setState({ ...usersData, publicThreads, ...filterdThreadsData })
 			}
@@ -78,7 +82,7 @@ export default class Dashboard extends Component {
 			const usersData = await this.loadUsers(false)
 			const response = await api.fetchFlaggedMessages()
 			const flaggedMessages = await response.json()
-			const filterdMessagesData = await this.getFilteredFlaggedMessages(flaggedMessages, this.state.filterSenderQuery, this.state.filterMessageQuery)
+			const filterdMessagesData = await this.getFilteredFlaggedMessages(flaggedMessages, this.state.filterMessageSenderQuery, this.state.filterMessageValueQuery)
 			const data = { ...usersData, flaggedMessages, ...filterdMessagesData }
 			if (update) this.setState(data)
 			return data
@@ -92,43 +96,46 @@ export default class Dashboard extends Component {
 
 	loadData() {
 		localStorage.setItem('backend', this.state.backend || '')
+		if (!this.props.tab) {
+			const selectedTab = localStorage.getItem('selectedTab')
+			if (selectedTab) route('/' + selectedTab)
+			else route('/' + tabs.users)
+		}
 		api.init(this.state.backend)
-		if (this.state.selectedTab === 'users') {
+		if (this.props.tab === tabs.users) {
 			this.loadUsers().catch(console.error)
 		}
-		if (this.state.selectedTab === 'public-threads') {
+		if (this.props.tab === tabs.publicThreads) {
 			this.loadPublicThreads().catch(console.error)
 		}
-		if (this.state.selectedTab === 'moderation') {
+		if (this.props.tab === tabs.flaggedMessages) {
 			this.loadFlaggedMessages().catch(console.error)
 		}
 	}
 
 	activateTab(ev) {
 		localStorage.setItem('selectedTab', ev.target.dataset.tab)
-		localStorage.setItem('selectedUser', '')
-		localStorage.setItem('selectedThread', '')
-		this.setState({ selectedTab: ev.target.dataset.tab, selectedUser: null, selectedThread: null })
+		route('/' + ev.target.dataset.tab)
 		this.loadData()
 	}
 
 	selectUser(uid) {
-		localStorage.setItem('selectedUser', uid)
-		this.setState({ selectedUser: uid })
+		route('/'+ tabs.users +'/' + uid)
+		this.loadUsers()
 	}
 
-	selectThread(tid) {
-		localStorage.setItem('selectedThread', tid)
-		this.setState({ selectedThread: tid })
+	selectPublicThread(tid) {
+		route('/' + tabs.publicThreads + '/' + tid)
+		this.loadPublicThreads()
 	}
 
 	async updateUserMeta(meta) {
-		await api.setUserMeta(this.state.selectedUser, meta)
+		await api.setUserMeta(this.props.data, meta)
 		return this.loadUsers()
 	}
 
 	async updateThreadMeta(meta) {
-		await api.setThreadMeta(this.state.selectedThread, meta)
+		await api.setThreadMeta(this.props.data, meta)
 		return this.loadPublicThreads()
 	}
 
@@ -148,11 +155,11 @@ export default class Dashboard extends Component {
 			})
 			return {
 				filteredUsers: this.reduceKeysToObjects(uids, users),
-				filterIndex: index,
-				filterQuery: query
+				filterUserIndex: index,
+				filterUserQuery: query
 			}
 		}
-		return { filteredUsers: null, filterIndex: null, filterQuery: null }
+		return { filteredUsers: null, filterUserIndex: null, filterUserQuery: null }
 	}
 
 	getFilteredPublicThreads(publicThreads, query) {
@@ -167,14 +174,14 @@ export default class Dashboard extends Component {
 			})
 			return {
 				filteredPublicThreads: this.reduceKeysToObjects(tids, publicThreads),
-				filterQuery: query
+				filterThreadQuery: query
 			}
 		}
-		return { filteredPublicThreads: null, filterQuery: null }
+		return { filteredPublicThreads: null, filterThreadQuery: null }
 	}
 
-	getFilteredFlaggedMessages(flaggedMessages, senderQuery, messageQuery) {
-		if (flaggedMessages && (senderQuery || messageQuery)) {
+	getFilteredFlaggedMessages(flaggedMessages, senderQuery, valueQuery) {
+		if (flaggedMessages && (senderQuery || valueQuery)) {
 			let mids = Object.keys(flaggedMessages)
 			if (senderQuery) {
 				mids = mids.filter(mid => {
@@ -183,16 +190,16 @@ export default class Dashboard extends Component {
 					return user && this.isMatch(user.meta.name, senderQuery)
 				})
 			}
-			if (messageQuery) {
-				mids = mids.filter(mid => this.isMatch(flaggedMessages[mid].message, messageQuery))
+			if (valueQuery) {
+				mids = mids.filter(mid => this.isMatch(flaggedMessages[mid].message, valueQuery))
 			}
 			return {
 				filteredFlaggedMessages: this.reduceKeysToObjects(mids, flaggedMessages),
-				filterSenderQuery: senderQuery,
-				filterMessageQuery: messageQuery
+				filterMessageSenderQuery: senderQuery,
+				filterMessageValueQuery: valueQuery
 			}
 		}
-		return { filteredFlaggedMessages: null, filterSenderQuery: null, filterMessageQuery: null }
+		return { filteredFlaggedMessages: null, filterMessageSenderQuery: null, filterMessageValueQuery: null }
 	}
 
 	filterUsers(index, query) {
@@ -208,13 +215,16 @@ export default class Dashboard extends Component {
 	}
 
 	componentDidMount() {
+		if (this.props.tab) {
+			localStorage.setItem('selectedTab', this.props.tab)
+		}
 		if (this.state.backend) {
 			this.loadData()
 		}
 	}
 
 	renderTab(title, value) {
-		return (<input class={'u-full-width' + (this.state.selectedTab === value ? ' button-primary' : '')}
+		return (<input class={'u-full-width' + (this.props.tab === value ? ' button-primary' : '')}
 			type="button" data-tab={value} value={title}
 			onClick={this.activateTab.bind(this)} />)
 	}
@@ -223,67 +233,80 @@ export default class Dashboard extends Component {
 		return (
 			<div class="row">
 				<div class="columns four">
-					{this.renderTab('Users', 'users')}
+					{this.renderTab('Users', tabs.users)}
 				</div>
 				<div class="columns four">
-					{this.renderTab('Public Rooms', 'public-threads')}
+					{this.renderTab('Public Rooms', tabs.publicThreads)}
 				</div>
 				<div class="columns four">
-					{this.renderTab('Moderation', 'moderation')}
+					{this.renderTab('Moderation', tabs.flaggedMessages)}
 				</div>
 			</div>
 		)
 	}
 
-	renderComponentForTab(tab) {
-		switch (tab) {
-			case 'users':
-				if (this.state.selectedUser) {
-					if (this.state.users) {
-						const user = this.state.users[this.state.selectedUser]
-						return <UserDetails user={user}
-							updateUserMeta={this.updateUserMeta.bind(this)} />
-					} else {
-						return <div>Loading...</div>
-					}
-				} else {
-					return <Users users={this.state.filteredUsers || this.state.users}
-						filterUsers={this.filterUsers.bind(this)}
-						selectUser={this.selectUser.bind(this)}
-						refresh={this.loadUsers.bind(this)} />
-				}
-			case 'public-threads':
-				if (this.state.selectedThread) {
-					if (this.state.publicThreads) {
-						const thread = this.state.publicThreads[this.state.selectedThread]
-						return <ThreadDetails thread={thread}
-							updateThreadMeta={this.updateThreadMeta.bind(this)} />
-					} else {
-						return <div>Loading...</div>
-					}
-				} else {
-					return <PublicThreads threads={this.state.filteredPublicThreads || this.state.publicThreads}
-						filterThreads={this.filterPublicThreads.bind(this)}
-						selectThread={this.selectThread.bind(this)}
-						refresh={this.loadPublicThreads.bind(this)} />
-				}
-			case 'moderation':
-				if (this.state.flaggedMessages) {
-					if (this.state.users) {
-						return <Moderation messages={this.state.filteredFlaggedMessages || this.state.flaggedMessages}
-							users={this.state.users}
-							filterMessages={this.filterFlaggedMessages.bind(this)}
-							unflagMessage={api.unflagMessage.bind(this)}
-							deleteMessage={api.deleteFlaggedMessage.bind(this)}
-							refresh={this.loadFlaggedMessages.bind(this)} />
-					} else {
-						return <div>Loading...</div>
-					}
-				} else {
-					return <div>No flagged messages found</div>
-				}
-			default:
-				return <div />
+	renderUsers(path) {
+		if (this.state.users) {
+			return <Users path={path} users={this.state.filteredUsers || this.state.users}
+				filterUsers={this.filterUsers.bind(this)}
+				selectUser={this.selectUser.bind(this)}
+				refresh={this.loadUsers.bind(this)} />
+		} else {
+			return <div path={path} >Loading...</div>
+		}
+	}
+
+	renderUserDetails(path) {
+		if (this.state.users) {
+			const user = this.state.users[this.props.matches.data]
+			if (user) {
+				return <UserDetails path={path} user={user}
+					updateUserMeta={this.updateUserMeta.bind(this)} />
+			} else {
+				return <div path={path} >User not found</div>
+			}
+		} else {
+			return <div path={path} >Loading...</div>
+		}
+	}
+
+	renderPublicThreads(path) {
+		if (this.state.publicThreads) {
+			return <PublicThreads path={path}
+				threads={this.state.filteredPublicThreads || this.state.publicThreads}
+				filterThreads={this.filterPublicThreads.bind(this)}
+				selectThread={this.selectPublicThread.bind(this)}
+				refresh={this.loadPublicThreads.bind(this)} />
+		} else {
+			return <div path={path} >Loading...</div>
+		}
+	}
+
+	renderPublicThreadDetails(path) {
+		if (this.state.publicThreads) {
+			const thread = this.state.publicThreads[this.props.matches.data]
+			if (thread) {
+				return <ThreadDetails path={path} thread={thread}
+					updateThreadMeta={this.updateThreadMeta.bind(this)} />
+			} else {
+				return <div path={path} >Room not found</div>
+			}
+		} else {
+			return <div path={path} >Loading...</div>
+		}
+	}
+
+	renderFlaggedMessages(path) {
+		if (this.state.flaggedMessages) {
+			return <Moderation path={path}
+				messages={this.state.filteredFlaggedMessages || this.state.flaggedMessages}
+				users={this.state.users}
+				filterMessages={this.filterFlaggedMessages.bind(this)}
+				unflagMessage={api.unflagMessage.bind(this)}
+				deleteMessage={api.deleteFlaggedMessage.bind(this)}
+				refresh={this.loadFlaggedMessages.bind(this)} />
+		} else {
+			return <div path={path} >Loading...</div>
 		}
 	}
 
@@ -303,7 +326,13 @@ export default class Dashboard extends Component {
 				</div>
 				{this.renderTabBar.bind(this)()}
 				<div class={style.widget}>
-					{this.renderComponentForTab(this.state.selectedTab)}
+					<Router onChange={this.handleRoute}>
+						{this.renderUsers('/' + tabs.users)}
+						{this.renderUserDetails('/' + tabs.users + '/:uid')}
+						{this.renderPublicThreads('/' + tabs.publicThreads)}
+						{this.renderPublicThreadDetails('/' + tabs.publicThreads + '/:tid')}
+						{this.renderFlaggedMessages('/' + tabs.flaggedMessages)}
+					</Router>
 				</div>
 			</div>
 		)
