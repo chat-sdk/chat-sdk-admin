@@ -9,6 +9,20 @@ import PublicThreads from '../../components/public-threads'
 import ThreadDetails from '../../components/thread-details'
 import Moderation from '../../components/moderation'
 
+// Required for building project with pre-rendering supported
+const localStorage = {
+	setItem: (key, value) => {
+		if (typeof window !== 'undefined') {
+			window.localStorage.setItem(key, value)
+}
+	},
+	getItem: (key) => {
+		if (typeof window !== 'undefined') {
+			return window.localStorage.getItem(key)
+		}
+	}
+}
+
 export default class Dashboard extends Component {
 	state = {
 		backend: localStorage.getItem('backend'),
