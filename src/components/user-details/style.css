@@ -1,0 +1,18 @@
+.user_heading {
+  display: flex;
+  align-items: center;
+}
+
+.user_title {
+  word-break: break-word;
+}
+
+.user_avatar {
+  width: 2em;
+  height: 2em;
+  margin-right: 10px;
+  border: 1px solid #EEE;
+  box-sizing: border-box;
+  border-radius: 1em;
+  object-fit: cover;
+}

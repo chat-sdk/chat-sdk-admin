@@ -72,11 +72,17 @@ export default class UserDetails extends Component {
 	}
 
 	render({ updateUserMeta }) {
+		const avatar = this.state.meta.pictureURL
 		return (
 			<div class={style.user_details}>
 				<div class="row">
 					<div class="columns six">
-						<h2>{this.state.meta.name || this.state.meta.email }</h2>
+						<h3 class={style.user_heading}>
+							{avatar && <img class={style.user_avatar} src={avatar} />}
+							<span class={style.user_title}>
+								{this.state.meta.name || this.state.meta.email }
+							</span>
+						</h3>
 					</div>
 					<div class="columns three">
 						<input class='u-full-width delete-button' type="button" value="Delete User" />
