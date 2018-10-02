@@ -13,7 +13,6 @@
   },
   "homepage": "https://github.com/pepebecker/chat-sdk-admin-panel#readme",
   "scripts": {
-    "server": "nodemon server/index.js",
     "start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
     "build": "preact build",
     "serve": "preact build && preact serve",
@@ -34,17 +33,10 @@
     "identity-obj-proxy": "^3.0.0",
     "if-env": "^1.0.0",
     "jest": "^21.2.1",
-    "nodemon": "^1.18.4",
     "preact-cli": "^2.1.0",
     "preact-render-spy": "^1.2.1"
   },
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "compression": "^1.7.3",
-    "corser": "^2.0.1",
-    "express": "^4.16.3",
-    "firebase-admin": "^6.0.0",
-    "ip": "^1.1.5",
     "preact": "^8.2.6",
     "preact-compat": "^3.17.0",
     "preact-router": "^2.5.7"
