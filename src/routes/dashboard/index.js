@@ -129,6 +129,10 @@ export default class Dashboard extends Component {
 		this.loadPublicThreads()
 	}
 
+	deleteUser(uid) {
+		return api.deleteUser(uid)
+	}
+
 	async updateUserMeta(meta) {
 		await api.setUserMeta(this.props.data, meta)
 		return this.loadUsers()
@@ -250,6 +254,7 @@ export default class Dashboard extends Component {
 			return <Users path={path} users={this.state.filteredUsers || this.state.users}
 				filterUsers={this.filterUsers.bind(this)}
 				selectUser={this.selectUser.bind(this)}
+				deleteUser={this.deleteUser.bind(this)}
 				refresh={this.loadUsers.bind(this)} />
 		} else {
 			return <div path={path} >Loading...</div>

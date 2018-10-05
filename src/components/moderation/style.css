@@ -1,21 +1,44 @@
-.flagged_list {
-  list-style: none;
+div.flagged_list {
   margin: 0;
+  padding: 0;
   border-radius: 4px;
   overflow: hidden;
   overflow-y: scroll;
   max-height: 300px;
 }
 
-.flagged_list .flagged_list_item {
+table.flagged_list_content {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+tr.flagged_list_row {
   background: white;
   margin: 0 0 1px 0;
   padding: 5px;
-  display: grid;
-  grid-template-columns: 40px 1fr 100px;
-  align-items: center;
 }
 
+td.sender_cell {
+  padding: 0 5px;
+  text-align: left;
+}
+
+td.message_cell {
+  text-align: left;
+  padding: 10px 5px;
+  width: auto;
+}
+
+td.buttons_cell {
+  padding: 5px;
+  text-align: right;
+}
+
+td.buttons_cell a {
+  margin: 0 5px;
+}
 .flagged_list .user_avatar_link {
   display: flex;
 }
@@ -28,16 +51,4 @@
   box-sizing: border-box;
   border-radius: 16px;
   object-fit: cover;
-}
-
-.flagged_list .message {
-  justify-self: stretch;
-}
-
-.flagged_list .flagged_list_right {
-  justify-self: end;
-}
-
-.flagged_list .flagged_list_right a {
-  margin: 0 5px;
 }

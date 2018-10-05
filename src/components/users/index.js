@@ -25,7 +25,7 @@ const handleFilterInput = filterUsers => ev => {
 	filterUsers(filterState.key, filterState.value)
 }
 
-const renderUsersList = (users, selectUser) => {
+const renderUsersList = (users, selectUser, deleteUser) => {
 	const uids = Object.keys(users || {})
 	if (uids.length > 0) {
 		return uids.map(uid => {
@@ -40,7 +40,7 @@ const renderUsersList = (users, selectUser) => {
 					<span class={style.users_list_right}>
 						<Link href="#">uid</Link>
 						<Link href="#" onClick={ev => selectUser(uid)}>edit</Link>
-						<Link href="#">delete</Link>
+						<Link href="#" onClick={ev => deleteUser(uid)}>delete</Link>
 						{ country ? <img class={style.country_flag} src={flag} /> : <div class={style.country_flag} /> }
 					</span>
 				</li>
@@ -51,7 +51,7 @@ const renderUsersList = (users, selectUser) => {
 	}
 }
 
-const Users = ({ users, filterUsers, selectUser, refresh }) => (
+const Users = ({ users, filterUsers, selectUser, deleteUser, refresh }) => (
 	<div>
 		<div class="row">
 			<div class="columns three">
@@ -69,7 +69,7 @@ const Users = ({ users, filterUsers, selectUser, refresh }) => (
 			</div>
 		</div>
 		<ul class={style.users_list}>
-			{renderUsersList(users, selectUser)}
+			{renderUsersList(users, selectUser, deleteUser)}
 		</ul>
 	</div>
 )

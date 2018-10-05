@@ -17,19 +17,31 @@ const renderMessages = (messages, users, unflagMessage, deleteMessage, refresh) 
 	if (mids.length > 0) {
 		return mids.map(mid => {
 			const message = messages[mid]
-			const senderID = message['sender-entity-id']
-			const avatar = users[senderID].meta.pictureURL
+
+			const renderAvatar = uid => {
+				if (users[uid]) {
+					const avatar = users[uid].meta.pictureURL
+					return (
+						<Link class={style.user_avatar_link} href={'/users/' + uid}>
+							{avatar ? <img class={style.user_avatar} src={avatar} /> : <div class={style.user_avatar} />}
+						</Link>
+					)
+				} else {
+					return <b style="color: darkred">Deleted User</b>
+				}
+			}
+			
 			return (
-				<li class={style.flagged_list_item}>
-					<Link class={style.user_avatar_link} href={'/users/' + senderID}>
-						{avatar ? <img class={style.user_avatar} src={avatar} /> : <div class={style.user_avatar} />}
-					</Link>
-					<span class="message">{message.message}</span>
-					<span class={style.flagged_list_right}>
+				<tr class={style.flagged_list_row}>
+					<td class={style.sender_cell}>
+						{renderAvatar(message['sender-entity-id'])}
+					</td>
+					<td class={style.message_cell}>{message.message}</td>
+					<td class={style.buttons_cell}>
 						<Link href="#" onClick={ev => unflagMessage(mid).then(refresh)}>unflag</Link>
 						<Link href="#" onClick={ev => deleteMessage(mid).then(refresh)}>delete</Link>
-					</span>
-				</li>
+					</td>
+				</tr>
 			)
 		})
 	} else {
@@ -50,9 +62,13 @@ const Moderation = ({ messages, filterMessages, users, unflagMessage, deleteMess
 				<input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
 			</div>
 		</div>
-		<ul class={style.flagged_list}>
-			{renderMessages(messages, users, unflagMessage, deleteMessage, refresh)}
-		</ul>
+		<div class={style.flagged_list}>
+			<table class={style.flagged_list_content}>
+				<tbody>
+					{renderMessages(messages, users, unflagMessage, deleteMessage, refresh)}
+				</tbody>
+			</table>
+		</div>
 	</div>
 )
 
