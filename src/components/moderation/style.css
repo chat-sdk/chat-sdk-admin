@@ -52,3 +52,25 @@ td.buttons_cell a {
   border-radius: 16px;
   object-fit: cover;
 }
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loader > div {
+  margin: 0;
+  height: 28px;
+  width: 36px;
+}
+
+.no_messages_found {
+  background: white;
+  padding: 5px;
+  margin: 0;
+  color: gray;
+  font-weight: thin;
+  text-transform: uppercase;
+  text-align: center;
+}

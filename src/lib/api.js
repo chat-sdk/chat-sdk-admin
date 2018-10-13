@@ -1,106 +1,127 @@
-const state = {
-  backend: null
-}
+import xhr from './xhr'
+import push from './push'
 
-const init = backend => state.backend = backend
+const state = {
+  backend: null,
+  rootPath: null,
+  push: null
+}
 
 // Moderation
 
 const fetchFlaggedMessages = () => {
-  return fetch(state.backend + '/flagged-messages')
+  return state.push.subscribe(state.backend, state.rootPath, 'flagged-messages')
+  return xhr.get([state.backend, state.rootPath, 'flagged-messages'])
 }
 
 const flagMessage = (tid, mid) => {
-  return fetch(state.backend + '/flag-message/' + tid + '/' + mid, { method: 'PUT' })
+  return xhr.put([state.backend, state.rootPath, 'flag-message', tid, mid])
 }
 
 const unflagMessage = mid => {
-  return fetch(state.backend + '/unflag-message/' + mid, { method: 'PUT' })
+  return xhr.put([state.backend, state.rootPath, 'unflag-message', mid])
 }
 
 const deleteFlaggedMessage = mid => {
-  return fetch(state.backend + '/flagged-messages/' + mid, { method: 'DELETE' })
+  return xhr.delete([state.backend, state.rootPath, 'flagged-messages', mid])
 }
 
 // Users
 
+const fetchOnline = () => {
+  return state.push.subscribe(state.backend, state.rootPath, 'online')
+  return xhr.get([state.backend, state.rootPath, 'online'])
+}
+
 const fetchUsers = () => {
-  return fetch(state.backend + '/users')
+  return state.push.subscribe(state.backend, state.rootPath, 'users')
+  return xhr.get([state.backend, state.rootPath, 'users'])
 }
 
 const fetchUser = uid => {
-  return fetch(state.backend + '/users/' + uid)
+  return state.push.subscribe(state.backend, state.rootPath, 'users', uid)
+  return xhr.get([state.backend, state.rootPath, 'users', uid])
 }
 
 const fetchUserMeta = uid => {
-  return fetch(state.backend + '/users/' + uid + '/meta')
+  return state.push.subscribe(state.backend, state.rootPath, 'users', uid, 'meta')
+  return xhr.get([state.backend, state.rootPath, 'users', uid, 'meta'])
 }
 
 const setUserMeta = (uid, meta) => {
-  return fetch(state.backend + '/users/' + uid + '/meta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify(meta)
-  })
+  return xhr.post([state.backend, state.rootPath, 'users', uid, 'meta'], meta)
 }
 
 const deleteUser = uid => {
-  return fetch(state.backend + '/users/' + uid, { method: 'DELETE' })
+  return xhr.delete([state.backend, state.rootPath, 'users', uid])
 }
 
 // Threads
 
 const fetchThreads = () => {
-  return fetch(state.backend + '/threads')
+  return state.push.subscribe(state.backend, state.rootPath, 'threads')
+  return xhr.get([state.backend, state.rootPath, 'threads'])
 }
 
 const fetchPublicThreads = () => {
-  return fetch(state.backend + '/public-threads')
+  return state.push.subscribe(state.backend, state.rootPath, 'public-threads')
+  return xhr.get([state.backend, state.rootPath, 'public-threads'])
 }
 
 const fetchThread = tid => {
-  return fetch(state.backend + '/threads/' + tid)
+  return state.push.subscribe(state.backend, state.rootPath, 'threads', tid)
+  return xhr.get([state.backend, state.rootPath, 'threads', tid])
 }
 
 const fetchThreadMeta = tid => {
-  return fetch(state.backend + '/threads/' + tid + '/meta')
+  return state.push.subscribe(state.backend, state.rootPath, 'threads', tid, 'meta')
+  return xhr.get([state.backend, state.rootPath, 'threads', tid, 'meta'])
 }
 
 const setThreadMeta = (tid, meta) => {
-  return fetch(state.backend + '/threads/' + tid + '/meta', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    body: JSON.stringify(meta)
-  })
+  return xhr.post([state.backend, state.rootPath, 'threads', tid, 'meta'], meta)
 }
 
 const deleteThread = tid => {
-  return fetch(state.backend + '/threads/' + tid, { method: 'DELETE' })
+  return xhr.delete([state.backend, state.rootPath, 'threads', tid])
 }
 
 const deleteThreadMessage = (tid, mid) => {
-  return fetch(state.backend + '/threads/' + tid + '/messages/' + mid, { method: 'DELETE' })
+  return xhr.delete([state.backend, state.rootPath, 'threads', tid, 'messages', mid])
 }
 
-export default {
-  init,
+export default async (backend, rootPath) => {
+  state.backend = backend
+  state.rootPath = rootPath  
+  state.push = await push()
+  return {
+    setBackend: value => state.backend = value,
+    setRootPath: value => state.rootPath = value,
+    getBackend: () => state.backend,
+    getRootPath: () => state.rootPath,
+    isReady: () => typeof state.backend === 'string'
+      && typeof state.rootPath === 'string'
+      && state.backend.length > 0
+      && state.rootPath.length > 0,
 
-  fetchFlaggedMessages,
-  flagMessage,
-  unflagMessage,
-  deleteFlaggedMessage,
+    fetchFlaggedMessages,
+    flagMessage,
+    unflagMessage,
+    deleteFlaggedMessage,
 
-  fetchUsers,
-  fetchUser,
-  fetchUserMeta,
-  setUserMeta,
-  deleteUser,
+    fetchOnline,
+    fetchUsers,
+    fetchUser,
+    fetchUserMeta,
+    setUserMeta,
+    deleteUser,
 
-  fetchThreads,
-  fetchPublicThreads,
-  fetchThread,
-  fetchThreadMeta,
-  setThreadMeta,
-  deleteThreadMessage,
-  deleteThread
+    fetchThreads,
+    fetchPublicThreads,
+    fetchThread,
+    fetchThreadMeta,
+    setThreadMeta,
+    deleteThreadMessage,
+    deleteThread
+  }
 }

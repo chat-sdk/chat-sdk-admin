@@ -1,4 +1,5 @@
 import { Link } from 'preact-router/match'
+import { DotScale } from 'styled-loaders'
 
 import style from './style'
 
@@ -11,7 +12,7 @@ const handleFilterInput = filterThreads => ev => {
 	filterThreads(filterState.thread)
 }
 
-const renderThreadsList = (threads, selectThread) => {
+const renderThreadsList = (threads, selectThread, loading) => {
 	const tids = Object.keys(threads || {})
 	if (tids.length > 0) {
 		return tids.map(tid => {
@@ -26,12 +27,22 @@ const renderThreadsList = (threads, selectThread) => {
 				</li>
 			)
 		})
+	} else if (loading) {
+		return <div>Loading...</div>
 	} else {
-		return <li>No rooms found!</li>
+		return <li class={style.no_threads_found}>No public rooms found</li>
 	}
 }
 
-const PublicThreads = ({ threads, filterThreads, selectThread, refresh }) => (
+const renderRefreshButton = (refresh, loading) => {
+	if (loading) {
+		return <div class={style.loader + ' u-full-width button button-primary'}><DotScale color="white" /></div>
+	} else {
+		return <input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
+	}
+}
+
+const PublicThreads = ({ threads, filterThreads, selectThread, refresh, loading }) => (
 	<div>
 		<div class="row">
 			<div class="columns three">
@@ -41,11 +52,11 @@ const PublicThreads = ({ threads, filterThreads, selectThread, refresh }) => (
 				<input class="u-full-width" placeholder="Room Name" type="text" data-filter="thread" onInput={handleFilterInput(filterThreads)}/>
 			</div>
 			<div class="columns three">
-				<input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
+				{renderRefreshButton(refresh, loading)}
 			</div>
 		</div>
 		<ul class={style.threads_list}>
-			{renderThreadsList(threads, selectThread)}
+			{renderThreadsList(threads, selectThread, loading)}
 		</ul>
 	</div>
 )

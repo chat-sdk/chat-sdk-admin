@@ -1,4 +1,5 @@
 import { Link } from 'preact-router/match'
+import { DotScale } from 'styled-loaders'
 
 import style from './style'
 
@@ -25,7 +26,7 @@ const handleFilterInput = filterUsers => ev => {
 	filterUsers(filterState.key, filterState.value)
 }
 
-const renderUsersList = (users, selectUser, deleteUser) => {
+const renderUsersList = (users, selectUser, deleteUser, loading) => {
 	const uids = Object.keys(users || {})
 	if (uids.length > 0) {
 		return uids.map(uid => {
@@ -46,12 +47,22 @@ const renderUsersList = (users, selectUser, deleteUser) => {
 				</li>
 			)
 		})
+	} else if (loading) {
+		return <div>Loading...</div>
 	} else {
-		return <li>No users found!</li>
+		return <li class={style.no_users_found}>No users found</li>
 	}
 }
 
-const Users = ({ users, filterUsers, selectUser, deleteUser, refresh }) => (
+const renderRefreshButton = (refresh, loading) => {
+	if (loading) {
+		return <div class={style.loader + ' u-full-width button button-primary'}><DotScale color="white" /></div>
+	} else {
+		return <input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
+	}
+}
+
+const Users = ({ users, filterUsers, selectUser, deleteUser, loading, refresh }) => (
 	<div>
 		<div class="row">
 			<div class="columns three">
@@ -65,11 +76,11 @@ const Users = ({ users, filterUsers, selectUser, deleteUser, refresh }) => (
 				<input class="u-full-width" data-filter="value" type="text" placeholder={'Any ' + filterOptions[filterState.key]} value={filterState.value} onInput={handleFilterInput(filterUsers)} />
 			</div>
 			<div class="columns three">
-				<input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
+				{renderRefreshButton(refresh, loading)}
 			</div>
 		</div>
 		<ul class={style.users_list}>
-			{renderUsersList(users, selectUser, deleteUser)}
+			{renderUsersList(users, selectUser, deleteUser, loading)}
 		</ul>
 	</div>
 )

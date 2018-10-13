@@ -28,6 +28,7 @@
     "build/*"
   ],
   "devDependencies": {
+    "@types/url-join": "^0.8.2",
     "eslint": "^4.9.0",
     "eslint-config-synacor": "^2.0.2",
     "fast-async": "^6.3.8",
@@ -40,7 +41,11 @@
   "dependencies": {
     "preact": "^8.2.6",
     "preact-compat": "^3.17.0",
-    "preact-router": "^2.5.7"
+    "preact-router": "^2.5.7",
+    "rxjs": "^6.3.3",
+    "serviceworker-webpack-plugin": "^0.2.3",
+    "styled-loaders": "^0.3.0",
+    "url-join": "^4.0.0"
   },
   "jest": {
     "verbose": true,

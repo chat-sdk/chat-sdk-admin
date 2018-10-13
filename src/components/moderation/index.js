@@ -1,4 +1,5 @@
 import { Link } from 'preact-router/match'
+import { DotScale } from 'styled-loaders'
 
 import style from './style'
 
@@ -12,7 +13,7 @@ const handleFilterInput = filterMessages => ev => {
 	filterMessages(filterState.user, filterState.message)
 }
 
-const renderMessages = (messages, users, unflagMessage, deleteMessage, refresh) => {
+const renderMessages = (messages, users, unflagMessage, deleteMessage, refresh, loading) => {
 	const mids = Object.keys(messages || {})
 	if (mids.length > 0) {
 		return mids.map(mid => {
@@ -44,12 +45,22 @@ const renderMessages = (messages, users, unflagMessage, deleteMessage, refresh) 
 				</tr>
 			)
 		})
+	} else if (loading) {
+		return <div>Loading...</div>
 	} else {
-		return <li>No flagged messages found!</li>
+		return <div class={style.no_messages_found}>No flagged messages found</div>
 	}
 }
 
-const Moderation = ({ messages, filterMessages, users, unflagMessage, deleteMessage, refresh }) => (
+const renderRefreshButton = (refresh, loading) => {
+	if (loading) {
+		return <div class={style.loader + ' u-full-width button button-primary'}><DotScale color="white" /></div>
+	} else {
+		return <input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
+	}
+}
+
+const Moderation = ({ messages, filterMessages, users, unflagMessage, deleteMessage, refresh, loading }) => (
 	<div>
 		<div class="row">
 			<div class="columns four">
@@ -59,13 +70,13 @@ const Moderation = ({ messages, filterMessages, users, unflagMessage, deleteMess
 				<input class="u-full-width" data-filter="message" type="text" placeholder="Any Message" value={filterState.message} onInput={handleFilterInput(filterMessages)} />
 			</div>
 			<div class="columns three">
-				<input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
+				{renderRefreshButton(refresh, loading)}
 			</div>
 		</div>
 		<div class={style.flagged_list}>
 			<table class={style.flagged_list_content}>
 				<tbody>
-					{renderMessages(messages, users, unflagMessage, deleteMessage, refresh)}
+					{renderMessages(messages, users, unflagMessage, deleteMessage, refresh, loading)}
 				</tbody>
 			</table>
 		</div>

@@ -32,91 +32,109 @@ const tabs = {
 
 export default class Dashboard extends Component {
 	state = {
-		backend: localStorage.getItem('backend')
+		backend: localStorage.getItem('backend'),
+		rootPath: localStorage.getItem('rootPath'),
+		loading: true
 	}
 
 	handleBackendInput(ev) {
 		this.setState({ backend: ev.target.value })
 	}
 
-	async loadUsers(update = true) {
-		console.log('Dashboard: loadUsers()')
-		try {
-			const response = await api.fetchUsers()
-			const users = await response.json()
-			const filteredUsersData = this.getFilteredUsers(users, this.state.filterUserIndex, this.state.filterUserQuery)
-			if (update) {
-				this.setState({ users, ...filteredUsersData })
-			}
-			return { users, ...filteredUsersData }
-		} catch (err) {
-			if (update) {
-				this.setState({ users: null })
-				console.error(err)
-			} else throw err
-		}
+	handleRootPathInput(ev) {
+		this.setState({ rootPath: ev.target.value })
+	}
+
+	loadUsers(update = true) {
+		if (update) this.setState({ loading: true })
+		if (!this.state.api.isReady()) return Promise.reject(new Error('api not ready'))
+		return new Promise((resolve, reject) => {
+			this.state.api.fetchUsers().subscribe(users => {
+				const filteredUsersData = this.getFilteredUsers(users, this.state.filterUserIndex, this.state.filterUserQuery)
+				const data = { users, ...filteredUsersData }
+				if (update) this.setState({ ...data, loading: false })
+				resolve(data)
+			}, err => {
+				if (update) this.setState({ users: null, loading: false })
+				reject(err)
+			})
+		})
 	}
 
 	async loadPublicThreads(update = true) {
-		console.log('Dashboard: loadPublicThreads()')
-		try {
-			const usersData = await this.loadUsers(false)
-			const response = await api.fetchPublicThreads()
-			const publicThreads = await response.json()
-			const filterdThreadsData = await this.getFilteredPublicThreads(publicThreads, this.state.filterThreadQuery)
-			if (update) {
-				this.setState({ ...usersData, publicThreads, ...filterdThreadsData })
-			}
-			return { ...usersData, publicThreads, ...filterdThreadsData }
-		} catch (err) {
-			if (update) {
-				this.setState({ publicThreads: null })
-				console.error(err)
-			} else throw err
-		}
+		if (update) this.setState({ loading: true })
+		if (!this.state.api.isReady()) return Promise.reject(new Error('api not ready'))
+		const usersData = await this.loadUsers(false)
+		return new Promise((resolve, reject) => {
+			this.state.api.fetchPublicThreads().subscribe(publicThreads => {
+				const filterdThreadsData = this.getFilteredPublicThreads(publicThreads, this.state.filterThreadQuery)
+				const data = { ...usersData, publicThreads, ...filterdThreadsData }
+				if (update) this.setState({ ...data, loading: false })
+				resolve(data)
+			}, err => {
+				if (update) this.setState({ publicThreads: null, loading: false })
+				reject(err)
+			})
+		})
 	}
 
 	async loadFlaggedMessages(update = true) {
-		console.log('Dashboard: loadFlaggedMessages()')
-		try {
-			const usersData = await this.loadUsers(false)
-			const response = await api.fetchFlaggedMessages()
-			const flaggedMessages = await response.json()
-			const filterdMessagesData = await this.getFilteredFlaggedMessages(flaggedMessages, this.state.filterMessageSenderQuery, this.state.filterMessageValueQuery)
-			const data = { ...usersData, flaggedMessages, ...filterdMessagesData }
-			if (update) this.setState(data)
-			return data
-		} catch (err) {
-			if (update) {
-				this.setState({ flaggedMessages: null })
-				console.error(err)
-			} else throw err
+		if (update) this.setState({ loading: true })
+		if (!this.state.api.isReady()) return Promise.reject(new Error('api not ready'))
+		const usersData = await this.loadUsers(false)
+		return new Promise((resolve, reject) => {
+			this.state.api.fetchFlaggedMessages().subscribe(flaggedMessages => {
+				const filterdMessagesData = this.getFilteredFlaggedMessages(flaggedMessages, this.state.filterMessageSenderQuery, this.state.filterMessageValueQuery)
+				const data = { ...usersData, flaggedMessages, ...filterdMessagesData }
+				if (update) this.setState({ ...data, loading: false })
+				resolve(data)
+			}, err => {
+				if (update) this.setState({ flaggedMessages: null, loading: false })
+				reject(err)
+			})
+		})
+	}
+
+	loadData(tab) {
+		if (this.state.api.isReady()) {
+			switch (tab) {
+				case tabs.publicThreads:
+					this.loadPublicThreads().catch(console.error)
+					break;
+				case tabs.flaggedMessages:
+					this.loadFlaggedMessages().catch(console.error)
+					break;
+				default:
+					this.loadUsers().catch(console.error)
+					break;
+			}
+		} else {
+			this.setState({ users: null, publicThreads: null, flaggedMessages: null, loading: false })
 		}
 	}
 
-	loadData() {
+	saveBackendAndLoadData() {
+		// Save backend and rootPath to localStorage
 		localStorage.setItem('backend', this.state.backend || '')
-		if (!this.props.tab) {
-			const selectedTab = localStorage.getItem('selectedTab')
-			if (selectedTab) route('/' + selectedTab)
-			else route('/' + tabs.users)
+		localStorage.setItem('rootPath', this.state.rootPath || '')
+		// If the API was successfully initialized set the backend and rootPath
+		// in case they have changed or they don't exist yet
+		if (this.state.api) {
+			this.state.api.setBackend(this.state.backend)
+			this.state.api.setRootPath(this.state.rootPath)
 		}
-		api.init(this.state.backend)
-		if (this.props.tab === tabs.users) {
-			this.loadUsers().catch(console.error)
-		}
-		if (this.props.tab === tabs.publicThreads) {
-			this.loadPublicThreads().catch(console.error)
-		}
-		if (this.props.tab === tabs.flaggedMessages) {
-			this.loadFlaggedMessages().catch(console.error)
-		}
+		// Load data for the current tab
+		this.loadData(this.props.tab)
 	}
 
 	activateTab(ev) {
-		localStorage.setItem('selectedTab', ev.target.dataset.tab)
-		route('/' + ev.target.dataset.tab)
-		this.loadData()
+		const tab = ev.target.dataset.tab
+		// Save selectedTab to localStorage for next time
+		localStorage.setItem('selectedTab', tab)
+		// Load the selected tab	
+		route('/' + tab)
+		// Load data for the selectedTab
+		this.loadData(tab)
 	}
 
 	selectUser(uid) {
@@ -130,18 +148,28 @@ export default class Dashboard extends Component {
 	}
 
 	deleteUser(uid) {
-		return api.deleteUser(uid)
+		return this.state.api.deleteUser(uid)
+	}
+
+	unflagMessage(mid) {
+		return this.state.unflagMessage(mid)
+	}
+
+	deleteFlaggedMessage(mid) {
+		return this.state.api.deleteFlaggedMessage(mid)
 	}
 
 	async updateUserMeta(meta) {
-		await api.setUserMeta(this.props.data, meta)
+		await this.state.api.setUserMeta(this.props.data, meta)
 		return this.loadUsers()
 	}
 
 	async updateThreadMeta(meta) {
-		await api.setThreadMeta(this.props.data, meta)
+		await this.state.api.setThreadMeta(this.props.data, meta)
 		return this.loadPublicThreads()
 	}
+
+	// Filtering
 
 	isMatch(a, b) {
 		return (a || '').toLowerCase().match((b || '').toLowerCase())
@@ -218,13 +246,22 @@ export default class Dashboard extends Component {
 		this.setState(this.getFilteredFlaggedMessages(this.state.flaggedMessages, senderQuery, messageQuery))
 	}
 
-	componentDidMount() {
-		if (this.props.tab) {
-			localStorage.setItem('selectedTab', this.props.tab)
+	async componentDidMount() {
+		// Initialize the api and save it to the state
+		this.setState({
+			api: await api(this.state.backend, this.state.rootPath)
+		})
+
+		// If no tab is selected open the tab which was save to localStorage
+		// Load the users tab if no tab was saved to localStorafe
+		let selectedTab = this.props.tab
+		if (!selectedTab) {
+			selectedTab = localStorage.getItem('selectedTab') || tabs.users
+			route('/' + selectedTab)
 		}
-		if (this.state.backend) {
-			this.loadData()
-		}
+
+		// Load the data for the selectedTab
+		this.loadData(selectedTab)
 	}
 
 	renderTab(title, value) {
@@ -250,15 +287,12 @@ export default class Dashboard extends Component {
 	}
 
 	renderUsers(path) {
-		if (this.state.users) {
-			return <Users path={path} users={this.state.filteredUsers || this.state.users}
-				filterUsers={this.filterUsers.bind(this)}
-				selectUser={this.selectUser.bind(this)}
-				deleteUser={this.deleteUser.bind(this)}
-				refresh={this.loadUsers.bind(this)} />
-		} else {
-			return <div path={path} >Loading...</div>
-		}
+		return <Users path={path} users={this.state.filteredUsers || this.state.users}
+			filterUsers={this.filterUsers.bind(this)}
+			selectUser={this.selectUser.bind(this)}
+			deleteUser={this.deleteUser.bind(this)}
+			loading={this.state.loading}
+			refresh={this.loadUsers.bind(this)} />
 	}
 
 	renderUserDetails(path) {
@@ -276,15 +310,12 @@ export default class Dashboard extends Component {
 	}
 
 	renderPublicThreads(path) {
-		if (this.state.publicThreads) {
-			return <PublicThreads path={path}
-				threads={this.state.filteredPublicThreads || this.state.publicThreads}
-				filterThreads={this.filterPublicThreads.bind(this)}
-				selectThread={this.selectPublicThread.bind(this)}
-				refresh={this.loadPublicThreads.bind(this)} />
-		} else {
-			return <div path={path} >Loading...</div>
-		}
+		return <PublicThreads path={path}
+			threads={this.state.filteredPublicThreads || this.state.publicThreads}
+			filterThreads={this.filterPublicThreads.bind(this)}
+			selectThread={this.selectPublicThread.bind(this)}
+			loading={this.state.loading}
+			refresh={this.loadPublicThreads.bind(this)} />
 	}
 
 	renderPublicThreadDetails(path) {
@@ -302,34 +333,37 @@ export default class Dashboard extends Component {
 	}
 
 	renderFlaggedMessages(path) {
-		if (this.state.flaggedMessages) {
-			return <Moderation path={path}
-				messages={this.state.filteredFlaggedMessages || this.state.flaggedMessages}
-				users={this.state.users}
-				filterMessages={this.filterFlaggedMessages.bind(this)}
-				unflagMessage={api.unflagMessage.bind(this)}
-				deleteMessage={api.deleteFlaggedMessage.bind(this)}
-				refresh={this.loadFlaggedMessages.bind(this)} />
-		} else {
-			return <div path={path} >Loading...</div>
-		}
+		return <Moderation path={path}
+			messages={this.state.filteredFlaggedMessages || this.state.flaggedMessages}
+			users={this.state.users}
+			filterMessages={this.filterFlaggedMessages.bind(this)}
+			unflagMessage={this.unflagMessage.bind(this)}
+			deleteMessage={this.deleteFlaggedMessage.bind(this)}
+			loading={this.state.loading}
+			refresh={this.loadFlaggedMessages.bind(this)} />
 	}
 
-	render() {
-		// if (!firebase.auth().currentUser) route('/signin')
-		console.log('Dashboard: render()')
+	renderBackendConfig() {
 		return (
-			<div class={style.dashboard}>
-				<label for="backend">API Backend</label>
+			<div>
 				<div class="row">
-					<div class="ten columns">
-						<input class="u-full-width" type="text" id="backend" value={this.state.backend} onChange={this.handleBackendInput.bind(this)} />
+					<div class="seven columns">
+						<input class="u-full-width" type="text" id="backend" placeholder="Backend URL" value={this.state.backend} onChange={this.handleBackendInput.bind(this)} />
+					</div>
+					<div class="three columns">
+						<input class="u-full-width" type="text" id="rootPath" placeholder="Root Path" value={this.state.rootPath} onChange={this.handleRootPathInput.bind(this)} />
 					</div>
 					<div class="two columns">
-						<input class="u-full-width  button-primary" type="button" value="Load" onClick={this.loadData.bind(this)} />
+						<input class="u-full-width  button-primary" type="button" value="Load" onClick={this.saveBackendAndLoadData.bind(this)} />
 					</div>
 				</div>
-				{this.renderTabBar.bind(this)()}
+			</div>
+		)
+	}
+
+	renderContent() {
+		return (
+			<div>
 				<div class={style.widget}>
 					<Router onChange={this.handleRoute}>
 						{this.renderUsers('/' + tabs.users)}
@@ -339,6 +373,16 @@ export default class Dashboard extends Component {
 						{this.renderFlaggedMessages('/' + tabs.flaggedMessages)}
 					</Router>
 				</div>
+			</div>
+		)
+	}
+
+	render() {
+		return (
+			<div class={style.dashboard}>
+				{this.renderBackendConfig()}
+				{this.renderTabBar()}
+				{this.renderContent()}
 			</div>
 		)
 	}
