@@ -1,5 +1,6 @@
 import { h, Component } from 'preact'
 import { Router, route } from 'preact-router'
+import pickBy from 'lodash/pickBy'
 
 import style from './style'
 import api from '../../lib/api'
@@ -15,7 +16,7 @@ const localStorage = {
 	setItem: (key, value) => {
 		if (typeof window !== 'undefined') {
 			window.localStorage.setItem(key, value)
-}
+		}
 	},
 	getItem: (key) => {
 		if (typeof window !== 'undefined') {
@@ -45,11 +46,39 @@ export default class Dashboard extends Component {
 		this.setState({ rootPath: ev.target.value })
 	}
 
+	setLoading(value) {
+		if (value !== this.state.loading) {
+			this.setState({ loading: value })
+		}
+	}
+
+	// Load Data
+
+	loadUser(uid) {
+		this.setLoading(true)
+		return this.state.api.fetchUser(uid).then(user => {
+			this.setState(prevState => ({
+				users: { ...prevState.users, [uid]: user },
+				loading: false 
+			}))
+		})
+	}
+
+	loadThread(tid) {
+		this.setLoading(true)
+		return this.state.api.fetchThread(tid).then(thread => {
+			this.setState(prevState => ({
+				publicThreads: { ...prevState.publicThreads, [tid]: thread },
+				loading: false
+			}))
+		})
+	}
+
 	loadUsers(update = true) {
-		if (update) this.setState({ loading: true })
+		if (update) this.setLoading(true)
 		if (!this.state.api.isReady()) return Promise.reject(new Error('api not ready'))
 		return new Promise((resolve, reject) => {
-			this.state.api.fetchUsers().subscribe(users => {
+			this.state.api.fetchUsers.asObservable().subscribe(users => {
 				const filteredUsersData = this.getFilteredUsers(users, this.state.filterUserIndex, this.state.filterUserQuery)
 				const data = { users, ...filteredUsersData }
 				if (update) this.setState({ ...data, loading: false })
@@ -62,11 +91,11 @@ export default class Dashboard extends Component {
 	}
 
 	async loadPublicThreads(update = true) {
-		if (update) this.setState({ loading: true })
+		if (update) this.setLoading(true)
 		if (!this.state.api.isReady()) return Promise.reject(new Error('api not ready'))
 		const usersData = await this.loadUsers(false)
 		return new Promise((resolve, reject) => {
-			this.state.api.fetchPublicThreads().subscribe(publicThreads => {
+			this.state.api.fetchPublicThreads.asObservable().subscribe(publicThreads => {
 				const filterdThreadsData = this.getFilteredPublicThreads(publicThreads, this.state.filterThreadQuery)
 				const data = { ...usersData, publicThreads, ...filterdThreadsData }
 				if (update) this.setState({ ...data, loading: false })
@@ -79,11 +108,11 @@ export default class Dashboard extends Component {
 	}
 
 	async loadFlaggedMessages(update = true) {
-		if (update) this.setState({ loading: true })
+		if (update) this.setLoading(true)
 		if (!this.state.api.isReady()) return Promise.reject(new Error('api not ready'))
 		const usersData = await this.loadUsers(false)
 		return new Promise((resolve, reject) => {
-			this.state.api.fetchFlaggedMessages().subscribe(flaggedMessages => {
+			this.state.api.fetchFlaggedMessages.asObservable().subscribe(flaggedMessages => {
 				const filterdMessagesData = this.getFilteredFlaggedMessages(flaggedMessages, this.state.filterMessageSenderQuery, this.state.filterMessageValueQuery)
 				const data = { ...usersData, flaggedMessages, ...filterdMessagesData }
 				if (update) this.setState({ ...data, loading: false })
@@ -127,6 +156,8 @@ export default class Dashboard extends Component {
 		this.loadData(this.props.tab)
 	}
 
+	// Select
+
 	activateTab(ev) {
 		const tab = ev.target.dataset.tab
 		// Save selectedTab to localStorage for next time
@@ -139,12 +170,12 @@ export default class Dashboard extends Component {
 
 	selectUser(uid) {
 		route('/'+ tabs.users +'/' + uid)
-		this.loadUsers()
+		this.loadUser(uid)
 	}
 
 	selectPublicThread(tid) {
 		route('/' + tabs.publicThreads + '/' + tid)
-		this.loadPublicThreads()
+		this.loadThread(tid)
 	}
 
 	deleteUser(uid) {
@@ -160,23 +191,21 @@ export default class Dashboard extends Component {
 	}
 
 	async updateUserMeta(meta) {
-		await this.state.api.setUserMeta(this.props.data, meta)
-		return this.loadUsers()
+		this.setLoading(true)
+		await this.state.api.setUserMeta(this.props.id, meta)
+		return this.loadUser(this.props.id)
 	}
 
 	async updateThreadMeta(meta) {
-		await this.state.api.setThreadMeta(this.props.data, meta)
-		return this.loadPublicThreads()
+		this.setLoading(true)
+		await this.state.api.setThreadMeta(this.props.id, meta)
+		return this.loadThread(this.props.id)
 	}
 
 	// Filtering
 
 	isMatch(a, b) {
 		return (a || '').toLowerCase().match((b || '').toLowerCase())
-	}
-
-	reduceKeysToObjects(keys, objs) {
-		return keys.reduce((o, k) => (o[k] = objs[k], o), {})
 	}
 
 	getFilteredUsers(users, index, query) {
@@ -186,7 +215,7 @@ export default class Dashboard extends Component {
 				else return this.isMatch((users)[uid].meta[index], query)
 			})
 			return {
-				filteredUsers: this.reduceKeysToObjects(uids, users),
+				filteredUsers: pickBy(users, (_, k) => uids.includes(k)),
 				filterUserIndex: index,
 				filterUserQuery: query
 			}
@@ -205,7 +234,7 @@ export default class Dashboard extends Component {
 				}
 			})
 			return {
-				filteredPublicThreads: this.reduceKeysToObjects(tids, publicThreads),
+				filteredPublicThreads: pickBy(publicThreads, (_, k) => tids.includes(k)),
 				filterThreadQuery: query
 			}
 		}
@@ -226,7 +255,7 @@ export default class Dashboard extends Component {
 				mids = mids.filter(mid => this.isMatch(flaggedMessages[mid].message, valueQuery))
 			}
 			return {
-				filteredFlaggedMessages: this.reduceKeysToObjects(mids, flaggedMessages),
+				filteredFlaggedMessages: pickBy(flaggedMessages, (_, k) => mids.includes(k)),
 				filterMessageSenderQuery: senderQuery,
 				filterMessageValueQuery: valueQuery
 			}
@@ -270,22 +299,6 @@ export default class Dashboard extends Component {
 			onClick={this.activateTab.bind(this)} />)
 	}
 
-	renderTabBar() {
-		return (
-			<div class="row">
-				<div class="columns four">
-					{this.renderTab('Users', tabs.users)}
-				</div>
-				<div class="columns four">
-					{this.renderTab('Public Rooms', tabs.publicThreads)}
-				</div>
-				<div class="columns four">
-					{this.renderTab('Moderation', tabs.flaggedMessages)}
-				</div>
-			</div>
-		)
-	}
-
 	renderUsers(path) {
 		return <Users path={path} users={this.state.filteredUsers || this.state.users}
 			filterUsers={this.filterUsers.bind(this)}
@@ -297,9 +310,9 @@ export default class Dashboard extends Component {
 
 	renderUserDetails(path) {
 		if (this.state.users) {
-			const user = this.state.users[this.props.matches.data]
+			const user = this.state.users[this.props.id]
 			if (user) {
-				return <UserDetails path={path} user={user}
+				return <UserDetails path={path} user={user} loading={this.state.loading}
 					updateUserMeta={this.updateUserMeta.bind(this)} />
 			} else {
 				return <div path={path} >User not found</div>
@@ -320,9 +333,9 @@ export default class Dashboard extends Component {
 
 	renderPublicThreadDetails(path) {
 		if (this.state.publicThreads) {
-			const thread = this.state.publicThreads[this.props.matches.data]
+			const thread = this.state.publicThreads[this.props.id]
 			if (thread) {
-				return <ThreadDetails path={path} thread={thread}
+				return <ThreadDetails path={path} thread={thread} loading={this.state.loading}
 					updateThreadMeta={this.updateThreadMeta.bind(this)} />
 			} else {
 				return <div path={path} >Room not found</div>
@@ -356,6 +369,22 @@ export default class Dashboard extends Component {
 					<div class="two columns">
 						<input class="u-full-width  button-primary" type="button" value="Load" onClick={this.saveBackendAndLoadData.bind(this)} />
 					</div>
+				</div>
+			</div>
+		)
+	}
+
+	renderTabBar() {
+		return (
+			<div class="row">
+				<div class="columns four">
+					{this.renderTab('Users', tabs.users)}
+				</div>
+				<div class="columns four">
+					{this.renderTab('Public Rooms', tabs.publicThreads)}
+				</div>
+				<div class="columns four">
+					{this.renderTab('Moderation', tabs.flaggedMessages)}
 				</div>
 			</div>
 		)

@@ -1,7 +1,8 @@
 import { Link } from 'preact-router/match'
-import { DotScale } from 'styled-loaders'
 
 import style from './style'
+
+import LoadingButton from '../loading-button'
 
 const filterState = {
 	thread: null,
@@ -34,14 +35,6 @@ const renderThreadsList = (threads, selectThread, loading) => {
 	}
 }
 
-const renderRefreshButton = (refresh, loading) => {
-	if (loading) {
-		return <div class={style.loader + ' u-full-width button button-primary'}><DotScale color="white" /></div>
-	} else {
-		return <input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
-	}
-}
-
 const PublicThreads = ({ threads, filterThreads, selectThread, refresh, loading }) => (
 	<div>
 		<div class="row">
@@ -52,7 +45,7 @@ const PublicThreads = ({ threads, filterThreads, selectThread, refresh, loading 
 				<input class="u-full-width" placeholder="Room Name" type="text" data-filter="thread" onInput={handleFilterInput(filterThreads)}/>
 			</div>
 			<div class="columns three">
-				{renderRefreshButton(refresh, loading)}
+				<LoadingButton title="Refresh" onClick={refresh} loading={loading} />
 			</div>
 		</div>
 		<ul class={style.threads_list}>

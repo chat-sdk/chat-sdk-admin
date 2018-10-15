@@ -7,12 +7,22 @@ const state = {
   push: null
 }
 
-// Moderation
-
-const fetchFlaggedMessages = () => {
-  return state.push.subscribe(state.backend, state.rootPath, 'flagged-messages')
-  return xhr.get([state.backend, state.rootPath, 'flagged-messages'])
+const combinePathAndArgs = (path, args) => {
+  if (!args || args.length === 0) return path
+  for (const arg of args) {
+    const index = path.indexOf(null)
+    if (index >= 0) path[index] = arg
+  }
+  return path
 }
+
+const createFetcher = (...path) => {
+  const f = (...args) => xhr.get(combinePathAndArgs(path, args))
+  f.asObservable = (...args) => state.push.subscribe(...combinePathAndArgs(path, args))
+  return f
+}
+
+// Moderation
 
 const flagMessage = (tid, mid) => {
   return xhr.put([state.backend, state.rootPath, 'flag-message', tid, mid])
@@ -28,26 +38,6 @@ const deleteFlaggedMessage = mid => {
 
 // Users
 
-const fetchOnline = () => {
-  return state.push.subscribe(state.backend, state.rootPath, 'online')
-  return xhr.get([state.backend, state.rootPath, 'online'])
-}
-
-const fetchUsers = () => {
-  return state.push.subscribe(state.backend, state.rootPath, 'users')
-  return xhr.get([state.backend, state.rootPath, 'users'])
-}
-
-const fetchUser = uid => {
-  return state.push.subscribe(state.backend, state.rootPath, 'users', uid)
-  return xhr.get([state.backend, state.rootPath, 'users', uid])
-}
-
-const fetchUserMeta = uid => {
-  return state.push.subscribe(state.backend, state.rootPath, 'users', uid, 'meta')
-  return xhr.get([state.backend, state.rootPath, 'users', uid, 'meta'])
-}
-
 const setUserMeta = (uid, meta) => {
   return xhr.post([state.backend, state.rootPath, 'users', uid, 'meta'], meta)
 }
@@ -57,26 +47,6 @@ const deleteUser = uid => {
 }
 
 // Threads
-
-const fetchThreads = () => {
-  return state.push.subscribe(state.backend, state.rootPath, 'threads')
-  return xhr.get([state.backend, state.rootPath, 'threads'])
-}
-
-const fetchPublicThreads = () => {
-  return state.push.subscribe(state.backend, state.rootPath, 'public-threads')
-  return xhr.get([state.backend, state.rootPath, 'public-threads'])
-}
-
-const fetchThread = tid => {
-  return state.push.subscribe(state.backend, state.rootPath, 'threads', tid)
-  return xhr.get([state.backend, state.rootPath, 'threads', tid])
-}
-
-const fetchThreadMeta = tid => {
-  return state.push.subscribe(state.backend, state.rootPath, 'threads', tid, 'meta')
-  return xhr.get([state.backend, state.rootPath, 'threads', tid, 'meta'])
-}
 
 const setThreadMeta = (tid, meta) => {
   return xhr.post([state.backend, state.rootPath, 'threads', tid, 'meta'], meta)
@@ -104,22 +74,22 @@ export default async (backend, rootPath) => {
       && state.backend.length > 0
       && state.rootPath.length > 0,
 
-    fetchFlaggedMessages,
+    fetchFlaggedMessages: createFetcher(state.backend, state.rootPath, 'flagged-messages'),
     flagMessage,
     unflagMessage,
     deleteFlaggedMessage,
 
-    fetchOnline,
-    fetchUsers,
-    fetchUser,
-    fetchUserMeta,
+    fetchOnline: createFetcher(state.backend, state.rootPath, 'online'),
+    fetchUsers: createFetcher(state.backend, state.rootPath, 'users'),
+    fetchUser: createFetcher(state.backend, state.rootPath, 'users', null),
+    fetchUserMeta: createFetcher(state.backend, state.rootPath, 'users', null, 'meta'),
     setUserMeta,
     deleteUser,
 
-    fetchThreads,
-    fetchPublicThreads,
-    fetchThread,
-    fetchThreadMeta,
+    fetchThreads: createFetcher(state.backend, state.rootPath, 'threads'),
+    fetchPublicThreads: createFetcher(state.backend, state.rootPath, 'public-threads'),
+    fetchThread: createFetcher(state.backend, state.rootPath, 'threads', null),
+    fetchThreadMeta: createFetcher(state.backend, state.rootPath, 'threads', null, 'meta'),
     setThreadMeta,
     deleteThreadMessage,
     deleteThread

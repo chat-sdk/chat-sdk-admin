@@ -1,6 +1,8 @@
 import { Link } from 'preact-router/match'
+import Times from 'preact-icons/io/close'
 
 import style from './style'
+import { clone } from '../../lib/utils'
 
 const renameKey = (obj, oldKey, newKey) => {
 	const keys = Object.keys(obj)
@@ -24,7 +26,7 @@ const createFieldData = fields => {
 }
 
 const handleInput = (fields, ignoreFields, onUpdate) => ev => {
-	fields = {...fields}
+	fields = clone(fields)
 	const row = ev.target.dataset.fieldRow
 	let value = ev.target.value
 	if (ev.target.dataset.fieldType === 'key') {
@@ -43,7 +45,7 @@ const handleInput = (fields, ignoreFields, onUpdate) => ev => {
 }
 
 const addField = (fields, onUpdate) => ev => {
-	fields = { ...fields }
+	fields = clone(fields)
 	const { key, value } = createFieldData(fields)
 	fields[key] = value
 	if (typeof onUpdate === 'function')
@@ -51,21 +53,31 @@ const addField = (fields, onUpdate) => ev => {
 }
 
 const removeField = (fields, onUpdate) => ev => {
-	fields = { ...fields }
+	fields = clone(fields)
 	delete fields[ev.target.dataset.fieldRow]
 	if (typeof onUpdate === 'function')
 		onUpdate(fields)
 }
 
+const renderDatalist = id => {
+	return (
+		<datalist id={id}>
+			<option value="Red" />
+			<option value="Green" />
+			<option value="Blue" />
+			<option value="Yellow" />
+		</datalist>
+	)
+}
+
 const renderFields = (fields, ignoreFields, onUpdate) => {
-	fields = {...fields}
-	const keys = Object.keys(fields)
-	return keys.filter(key => !(ignoreFields || []).includes(key)).map(key => {
+	return Object.keys(fields).filter(key => !(ignoreFields || []).includes(key)).map(key => {
 		return (
 			<div class="row">
 				<div class="columns five">
-					<input class="u-full-width" type="text" data-field-type='key' data-field-row={key} value={key}
+					<input class="u-full-width" list={key + '-list'} type="text" data-field-type='key' data-field-row={key} value={key}
 						onInput={handleInput(fields, ignoreFields, onUpdate)} />
+					{renderDatalist(key + '-list')}
 				</div>
 				<div class="columns six">
 					<input class="u-full-width" type="text" data-field-type='value' data-field-row={key} value={fields[key]}
@@ -73,7 +85,7 @@ const renderFields = (fields, ignoreFields, onUpdate) => {
 				</div>
 				<div class="column one">
 					<Link class={'button u-full-width ' + style.delete_button} data-field-row={key} onClick={removeField(fields, onUpdate)}>
-						X
+						<Times />
 					</Link>
 				</div>
 			</div>

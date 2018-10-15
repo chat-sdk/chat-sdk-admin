@@ -1,33 +1,33 @@
 import { Component } from 'preact'
 
 import style from './style'
+import { isEqual, clone } from '../../lib/utils'
 
+import LoadingButton from '../loading-button'
 import CustomFields from '../custom-fields'
 
 export default class UserDetails extends Component {
 	constructor(props) {
 		super(props)
 		this.state = {
-			meta: {...props.user.meta},
+			meta: clone(props.user.meta),
 			ignoreInCustomFields: ['name', 'name-lowercase', 'status', 'email', 'phone', 'location', 'country-code', 'pictureURL', 'pushToken']
 		}
 	}
 
-	isMetaDifferent(meta) {
-		return JSON.stringify(meta) !== JSON.stringify(this.props.user.meta)
-	}
-
 	handleMetaInput(ev) {
-		const meta = this.state.meta
+		const meta = clone(this.state.meta)
 		meta[ev.target.id] = ev.target.value
 		if (ev.target.id === 'name') {
 			meta['name-lowercase'] = ev.target.value.toLowerCase()
 		}
-		this.setState({ meta, updateEnabled: this.isMetaDifferent(meta) })
+		this.setState({ meta })
 	}
 
 	customMetaUpdated(meta) {
-		this.setState({ meta, updateEnabled: this.isMetaDifferent(meta) })
+		if (!isEqual(meta, this.state.meta)) {
+			this.setState({ meta })
+		}
 	}
 
 	renderMeta() {
@@ -71,7 +71,7 @@ export default class UserDetails extends Component {
 		)
 	}
 
-	render({ updateUserMeta }) {
+	render({ updateUserMeta, loading }) {
 		const avatar = this.state.meta.pictureURL
 		return (
 			<div class={style.user_details}>
@@ -88,10 +88,8 @@ export default class UserDetails extends Component {
 						<input class='u-full-width delete-button' type="button" value="Delete User" />
 					</div>
 					<div class="columns three">
-						{this.state.updateEnabled
-							? <input class="u-full-width button-primary" type="button" value="Update User" onClick={ev => updateUserMeta(this.state.meta)} />
-							: <input class="u-full-width button" disabled="disabled" type="button" value="Update User" />
-						}
+						<LoadingButton title="Update User" onClick={ev => updateUserMeta(this.state.meta)} loading={loading}
+							disabled={isEqual(this.props.user.meta, this.state.meta)} />
 					</div>
 				</div>
 				{this.renderMeta()}

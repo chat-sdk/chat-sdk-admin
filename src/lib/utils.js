@@ -1,4 +1,4 @@
-const urlBase64ToUint8Array = base64String => {
+export const urlBase64ToUint8Array = base64String => {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
   const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/')
 
@@ -11,6 +11,6 @@ const urlBase64ToUint8Array = base64String => {
   return outputArray
 }
 
-export default {
-  urlBase64ToUint8Array
-}
+export const clone = obj => JSON.parse(JSON.stringify(obj))
+
+export const isEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b)

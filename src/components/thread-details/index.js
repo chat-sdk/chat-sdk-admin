@@ -1,5 +1,8 @@
 import { Component } from 'preact'
 
+import { isEqual, clone } from '../../lib/utils'
+
+import LoadingButton from '../loading-button'
 import CustomFields from '../custom-fields'
 
 export default class ThreadDetails extends Component {
@@ -16,28 +19,22 @@ export default class ThreadDetails extends Component {
 		return { ...thread.details, ...(thread.meta || {}) }
 	}
 
-	isMetaDifferent(a, b) {
-		return JSON.stringify(a) !== JSON.stringify(b)
-	}
-
 	handleMetaInput(ev) {
 		const meta = this.state.meta
 		meta[ev.target.id] = ev.target.value
 		if (ev.target.id === 'name') {
 			meta['name-lowercase'] = ev.target.value.toLowerCase()
 		}
-		this.setState({ meta, updateEnabled: this.isMetaDifferent(meta, this.getThreadMeta(this.props.thread)) })
+		this.setState({ meta,  })
 	}
 
 	customMetaUpdated(meta) {
-		this.setState({ meta, updateEnabled: this.isMetaDifferent(meta, this.getThreadMeta(this.props.thread)) })
+		if (!isEqual(meta, this.state.meta)) {
+			this.setState({ meta })
+		}
 	}
 
-	render({ updateThreadMeta, thread }) {
-		console.log('ThreadDetails:', 'render()')
-		if (this.isMetaDifferent(this.state.meta, this.getThreadMeta(thread))) {
-			console.log('meta is different:', this.state.meta.name, this.getThreadMeta(thread).name)
-		}
+	render({ updateThreadMeta, loading }) {
 		return (
 			<div>
 				<div class="row">
@@ -48,10 +45,8 @@ export default class ThreadDetails extends Component {
 						<input class="u-full-width delete-button" type="button" value="Delete Room" />
 					</div>
 					<div class="columns three">
-						{this.state.updateEnabled
-							? <input class="u-full-width button-primary" type="button" value="Update Room" onClick={ev => updateThreadMeta(this.state.meta)} />
-							: <input class="u-full-width button" disabled="disabled" type="button" value="Update Room" />
-						}
+						<LoadingButton title="Update Room" onClick={ev => updateThreadMeta(this.state.meta)} loading={loading}
+							disabled={isEqual(this.getThreadMeta(this.props.thread), this.state.meta)} />
 					</div>
 				</div>
 				<div class="row">

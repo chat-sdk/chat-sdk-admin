@@ -32,7 +32,7 @@ export default class App extends Component {
 			<div id="app">
 				<Header />
 				<Router onChange={this.handleRoute}>
-					<Dashboard path="/:tab?/:data?" />
+					<Dashboard path="/:tab?/:id?" />
 					<SignIn path="/signin" />
 					<SignUp path="/signup" />
 				</Router>

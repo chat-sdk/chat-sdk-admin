@@ -13,7 +13,10 @@ const xhr = async (url, options) => {
   console.log(options.method + ':', url)
   const response = await fetch(url, options)
   if (response.ok) {
-    return await response.json().catch(_ => response.text())
+    return await response.json()
+      .catch(_ => response.text())
+      .catch(_ => response.blob())
+      .catch(_ => response.status)
   } else {
     throw response.status
   }

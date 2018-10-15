@@ -24,18 +24,6 @@
   margin: 0 5px;
 }
 
-.loader {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.loader > div {
-  margin: 0;
-  height: 28px;
-  width: 36px;
-}
-
 .no_threads_found {
   background: white;
   padding: 5px;

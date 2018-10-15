@@ -3,7 +3,7 @@ import { Observable } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
 import urljoin from 'url-join'
 import xhr from './xhr'
-import utils from './utils'
+import { urlBase64ToUint8Array } from './utils'
 
 export default async () => {
   if ('serviceWorker' in navigator) {
@@ -11,7 +11,7 @@ export default async () => {
     const registration = await runtime.register()
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: utils.urlBase64ToUint8Array(vapidPublicKey)
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
     })
     const listeners = {}
     navigator.serviceWorker.addEventListener('message', ev => {

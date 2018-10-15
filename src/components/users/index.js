@@ -1,7 +1,8 @@
 import { Link } from 'preact-router/match'
-import { DotScale } from 'styled-loaders'
 
 import style from './style'
+
+import LoadingButton from '../loading-button'
 
 const filterOptions = {
 	uid: 'User ID',
@@ -54,14 +55,6 @@ const renderUsersList = (users, selectUser, deleteUser, loading) => {
 	}
 }
 
-const renderRefreshButton = (refresh, loading) => {
-	if (loading) {
-		return <div class={style.loader + ' u-full-width button button-primary'}><DotScale color="white" /></div>
-	} else {
-		return <input class="u-full-width button-primary" type="button" value="Refresh" onClick={refresh} />
-	}
-}
-
 const Users = ({ users, filterUsers, selectUser, deleteUser, loading, refresh }) => (
 	<div>
 		<div class="row">
@@ -76,7 +69,7 @@ const Users = ({ users, filterUsers, selectUser, deleteUser, loading, refresh })
 				<input class="u-full-width" data-filter="value" type="text" placeholder={'Any ' + filterOptions[filterState.key]} value={filterState.value} onInput={handleFilterInput(filterUsers)} />
 			</div>
 			<div class="columns three">
-				{renderRefreshButton(refresh, loading)}
+				<LoadingButton title="Refresh" onClick={refresh} loading={loading} />
 			</div>
 		</div>
 		<ul class={style.users_list}>
