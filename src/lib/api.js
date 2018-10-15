@@ -1,3 +1,4 @@
+import { from } from 'rxjs'
 import xhr from './xhr'
 import push from './push'
 
@@ -18,7 +19,13 @@ const combinePathAndArgs = (path, args) => {
 
 const createFetcher = (...path) => {
   const f = (...args) => xhr.get(combinePathAndArgs(path, args))
-  f.asObservable = (...args) => state.push.subscribe(...combinePathAndArgs(path, args))
+  f.asObservable = (...args) => {
+    if (state.push) {
+      return state.push.subscribe(...combinePathAndArgs(path, args))
+    } else {
+      return from(f())
+    }
+  }
   return f
 }
 
@@ -62,8 +69,12 @@ const deleteThreadMessage = (tid, mid) => {
 
 export default async (backend, rootPath) => {
   state.backend = backend
-  state.rootPath = rootPath  
-  state.push = await push()
+  state.rootPath = rootPath
+  try {
+    state.push = await push()
+  } catch (err) {
+    console.error('Push Error:', err.message || err)
+  }
   return {
     setBackend: value => state.backend = value,
     setRootPath: value => state.rootPath = value,
